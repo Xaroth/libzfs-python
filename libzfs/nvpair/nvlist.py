@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import IntEnum
 from .bindings import libnvpair, libnvpair_ffi
 
 from ..general import boolean_t
@@ -9,7 +9,7 @@ from libzfs.utils import six
 LOOKUP_DEFAULT = object()
 
 
-class NVListFlags(Enum):
+class NVListFlags(IntEnum):
     UNIQUE_NAME = 1
     UNIQUE_NAME_TYPE = 2
 
@@ -25,20 +25,22 @@ class NVList(object):
         if self._handle is None:
             self._handle = libnvpair_ffi.new('nvlist_t **')
         if self._alloc:
-            return libnvpair.nvlist_alloc(self._handle, self._flags, 0)
+            return libnvpair.nvlist_alloc(self._handle, int(self._flags), 0)
 
     __enter__ = alloc
 
     def free(self, exc_type, exc_val, exc_tb):
         if self._handle and self._free:
-            libnvpair.nvlist_free(self._handle)
+            libnvpair.nvlist_free(self.ptr)
             self._handle = None
 
     __exit__ = free
 
     @property
     def ptr(self):
-        return self._handle[0]
+        if self._handle:
+            return self._handle[0]
+        return None
 
     @property
     def handle(self):
@@ -67,7 +69,7 @@ class NVList(object):
 
     def add(self, key, value):
         k, v = key, value
-        if isinstance(v, int):
+        if isinstance(v, (int, long)):
             method = libnvpair.nvlist_add_uint64
         elif isinstance(v, six.binary_type):
             method = libnvpair.nvlist_add_string
@@ -80,10 +82,13 @@ class NVList(object):
 
     def lookup(self, key, type, default=LOOKUP_DEFAULT):
         k, t = key, type
-        if t == int:
+        if t == (int, long):
             holder = libnvpair_ffi.new('uint64_t *')
             method = libnvpair.nvlist_lookup_uint64
-            convert = lambda x: x[0]
+            if t == int:
+                convert = lambda x: int(x[0])
+            else:
+                convert = lambda x: long(x[0])
         elif t == six.binary_type:
             holder = libnvpair_ffi.new('char **')
             method = libnvpair.nvlist_lookup_string
