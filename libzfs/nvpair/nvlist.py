@@ -69,12 +69,12 @@ class NVList(object):
 
     def add(self, key, value):
         k, v = key, value
-        if isinstance(v, (int, long)):
-            method = libnvpair.nvlist_add_uint64
+        if isinstance(v, bool):
+            method = libnvpair.nvlist_add_boolean_value
         elif isinstance(v, six.binary_type):
             method = libnvpair.nvlist_add_string
-        elif isinstance(v, bool):
-            method = libnvpair.nvlist_add_boolean_value
+        elif isinstance(v, (int, long)):
+            method = libnvpair.nvlist_add_uint64
             v = boolean_t(v)
         else:
             raise Exception("Unknown type for key '%s': '%r'" % (k, v))
