@@ -1,12 +1,9 @@
-from .enums import DataType
 from .cdefs import TYPEDEFS, FUNCTIONS
 
-INCLUDES = ['general']
-GENERATE = True
+INCLUDES = []
+GENERATE = False
 
 __all__ = [
-    'DataType',
-
     'TYPEDEFS',
     'FUNCTIONS',
     'INCLUDES',

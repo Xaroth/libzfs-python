@@ -1,1 +1,5 @@
-from .libnvpair.enums import *  # noqa
+from .libnvpair import DataType
+
+__all__ = [
+    'DataType',
+]
