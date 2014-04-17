@@ -63,6 +63,8 @@ extra = {}
 console_scripts = entrypoints['console_scripts'] = [
 ]
 
+import libzfs
+
 if os.environ.get('SETUP_NORUN'):
     setup = lambda *args, **kwargs: None  # noqa
 
@@ -82,4 +84,5 @@ setup(
     entry_points=entrypoints,
     long_description=DESC,
     extras_require={},
+    ext_modules=[libzfs.bindings.manager.libnvpair_ffi.verifier.get_extension()],
     **extra)
