@@ -82,7 +82,7 @@ class NVList(object):
 
     def lookup(self, key, type, default=LOOKUP_DEFAULT):
         k, t = key, type
-        if t == (int, long):
+        if t in (int, long):
             holder = libnvpair_ffi.new('uint64_t *')
             method = libnvpair.nvlist_lookup_uint64
             if t == int:
