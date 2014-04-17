@@ -77,6 +77,10 @@ class BindingManager(object):
                 setattr(self, item, generated)
             setattr(self, '%s_ffi' % item, ffi)
 
+    def get_extensions(self):
+        modules = [ffi for key, ffi in self.ffi.items() if self.items.get(key, False)]
+        return [ffi.verifier.get_extension() for ffi in modules]
+
 manager = BindingManager()
 manager.include(FUNCTIONS, TYPEDEFS, INCLUDES, GENERATE, verify)
 

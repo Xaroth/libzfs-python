@@ -84,5 +84,5 @@ setup(
     entry_points=entrypoints,
     long_description=DESC,
     extras_require={},
-    ext_modules=[libzfs.bindings.manager.libnvpair_ffi.verifier.get_extension()],
+    ext_modules=libzfs.bindings.manager.get_extensions(),
     **extra)
