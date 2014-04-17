@@ -106,6 +106,8 @@ class NVList(object):
         val = method(self.ptr, key, holder)
         if not bool(val):
             return convert(holder)
+        elif default is not LOOKUP_DEFAULT:
+            return default
 
     def dump(self):
         return libnvpair.dump_nvlist(self.ptr, 0)
