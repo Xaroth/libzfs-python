@@ -14,6 +14,9 @@ class NVListFlags(IntEnum):
     UNIQUE_NAME = 1
     UNIQUE_NAME_TYPE = 2
 
+class UnknownValue(Exception):
+    pass
+
 
 class NVList(object):
     def __init__(self, flags=NVListFlags.UNIQUE_NAME, handle=None, alloc=True, free=True):
@@ -100,7 +103,7 @@ class NVList(object):
         try:
             dt = DataType(typeid)
         except ValueError:
-            raise Exception("Unknown type: '%r'" % typeid)
+            raise UnknownValue("Unknown type: '%r'" % typeid)
         return dt
 
     def lookup_smart(self, key, default=LOOKUP_DEFAULT):
@@ -115,7 +118,7 @@ class NVList(object):
         try:
             dt = DataType(typeid)
         except ValueError:
-            raise Exception("Unknown type: '%r'" % typeid)
+            raise UnknownValue("Unknown type: '%r'" % typeid)
         info = self.info_for_type(dt)
 
         valholder = info.create_holder()
@@ -128,6 +131,34 @@ class NVList(object):
 
     def dump(self):
         return c_libnvpair.dump_nvlist(self.ptr, 0)
+
+    def to_dict(self, skip_unknown = False):
+        data = {}
+        pair = c_libnvpair.nvlist_next_nvpair(self.ptr, ffi_libnvpair.NULL)
+        while pair != ffi_libnvpair.NULL:
+            name = ffi_libnvpair.string(c_libnvpair.nvpair_name(pair))
+            typeid = c_libnvpair.nvpair_type(pair)
+            try:
+                dt = DataType(typeid)
+                info = self.info_for_type(dt)
+            except (ValueError, UnknownValue):
+                if not skip_unknown:
+                    raise UnknownValue("Unknown type: '%r'" % typeid)
+                else:
+                    pair = c_libnvpair.nvlist_next_nvpair(self.ptr, pair)
+                    continue
+            valholder = info.create_holder()
+            val = info.nvpair_value(pair, valholder)
+            if not bool(val):
+                value = info.convert(valholder)
+                if value is NVList:
+                    with value:
+                        data[name] = value.to_dict()
+                else:
+                    data[name] = value
+
+            pair = c_libnvpair.nvlist_next_nvpair(self.ptr, pair)
+        return data
 
 
 def _to_int(hdl):
