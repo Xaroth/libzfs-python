@@ -47,9 +47,9 @@ class BindingManager(object):
         typedefs = self._typedefs.get(item)
         do_generate = self._generate.get(item, False)
         self.log.debug("CDef: typedefs")
-        ffi.cdef('\n'.join(typedefs.values()))
+        ffi.cdef('\n'.join(line for line in typedefs.values() if line))
         self.log.debug("CDef: functions")
-        ffi.cdef('\n'.join(functions.values()))
+        ffi.cdef('\n'.join(line for line in functions.values() if line))
 
         if do_generate:
             self.log.info("Verifying: '%s'", item)
