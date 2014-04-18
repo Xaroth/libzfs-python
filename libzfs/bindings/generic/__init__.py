@@ -2,10 +2,10 @@ from .libnvpair import (TYPEDEFS as TD_NVPAIR,
                         FUNCTIONS as FN_NVPAIR,
                         INCLUDES as INC_NVPAIR,
                         GENERATE as GEN_NVPAIR)
-from .general import   (TYPEDEFS as TD_GENERAL,
-                        FUNCTIONS as FN_GENERAL,
-                        INCLUDES as INC_GENERAL,
-                        GENERATE as GEN_GENERAL)
+from .general import (TYPEDEFS as TD_GENERAL,
+                      FUNCTIONS as FN_GENERAL,
+                      INCLUDES as INC_GENERAL,
+                      GENERATE as GEN_GENERAL)
 
 TYPEDEFS = {
     'general':      TD_GENERAL,
