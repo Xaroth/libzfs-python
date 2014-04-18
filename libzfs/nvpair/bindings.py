@@ -1,3 +1,11 @@
 from libzfs.bindings import manager
-libnvpair = manager.libnvpair
-libnvpair_ffi = manager.libnvpair_ffi
+from libzfs.bindings.enums import DataType
+
+c_libnvpair = manager.libnvpair
+ffi_libnvpair = manager.libnvpair_ffi
+
+__all__ = [
+    'DataType',
+    'c_libnvpair',
+    'ffi_libnvpair',
+]
