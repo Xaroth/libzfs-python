@@ -1,7 +1,6 @@
-from .libnvpair import DataType
-from .libzfs import (ZfsError, ZfsType, ZfsProp, ZfsUserquotaProp, ZpoolProp, ZpropSource,
+from .enums import (ZfsError, ZfsType, ZfsProp, ZfsUserquotaProp, ZpoolProp, ZpropSource,
                     ZpropDelegWho, ZfsDelegInherit)
-from .libzfs import (ZPROP_SRC_ALL, ZPROP_SOURCE_VAL_RECVD, ZPROP_N_MORE_ERRORS, ZPROP_HAS_RECVD,
+from .enums import (ZPROP_SRC_ALL, ZPROP_SOURCE_VAL_RECVD, ZPROP_N_MORE_ERRORS, ZPROP_HAS_RECVD,
                     ZPOOL_CONFIG_VERSION, ZPOOL_CONFIG_POOL_NAME, ZPOOL_CONFIG_POOL_STATE,
                     ZPOOL_CONFIG_POOL_TXG, ZPOOL_CONFIG_POOL_GUID, ZPOOL_CONFIG_CREATE_TXG,
                     ZPOOL_CONFIG_TOP_GUID, ZPOOL_CONFIG_VDEV_TREE, ZPOOL_CONFIG_TYPE,
@@ -26,9 +25,12 @@ from .libzfs import (ZPROP_SRC_ALL, ZPROP_SOURCE_VAL_RECVD, ZPROP_N_MORE_ERRORS,
                     ZPOOL_CONFIG_AUX_STATE, VDEV_TYPE_ROOT, VDEV_TYPE_MIRROR, VDEV_TYPE_REPLACING,
                     VDEV_TYPE_RAIDZ, VDEV_TYPE_DISK, VDEV_TYPE_FILE, VDEV_TYPE_MISSING, VDEV_TYPE_HOLE,
                     VDEV_TYPE_SPARE, VDEV_TYPE_LOG, VDEV_TYPE_L2CACHE)
-__all__ = [
-    'DataType',
+from .cdefs import TYPEDEFS, FUNCTIONS
 
+INCLUDES = ['libnvpair']
+GENERATE = True
+
+__all__ = [
     'ZfsError',
     'ZfsType',
     'ZfsProp',
@@ -121,4 +123,8 @@ __all__ = [
     'VDEV_TYPE_SPARE',
     'VDEV_TYPE_LOG',
     'VDEV_TYPE_L2CACHE',
+
+    'TYPEDEFS',
+    'FUNCTIONS',
+    'INCLUDES',
 ]

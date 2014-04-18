@@ -1,30 +1,38 @@
-from .libnvpair import (TYPEDEFS as TD_NVPAIR,
-                        FUNCTIONS as FN_NVPAIR,
-                        INCLUDES as INC_NVPAIR,
-                        GENERATE as GEN_NVPAIR)
 from .general import (TYPEDEFS as TD_GENERAL,
                       FUNCTIONS as FN_GENERAL,
                       INCLUDES as INC_GENERAL,
                       GENERATE as GEN_GENERAL)
+from .libnvpair import (TYPEDEFS as TD_NVPAIR,
+                        FUNCTIONS as FN_NVPAIR,
+                        INCLUDES as INC_NVPAIR,
+                        GENERATE as GEN_NVPAIR)
+from .libzfs import (TYPEDEFS as TD_ZFS,
+                     FUNCTIONS as FN_ZFS,
+                     INCLUDES as INC_ZFS,
+                     GENERATE as GEN_ZFS)
 
 TYPEDEFS = {
     'general':      TD_GENERAL,
     'libnvpair':    TD_NVPAIR,
+    'libzfs':       TD_ZFS,
 }
 
 FUNCTIONS = {
     'general':      FN_GENERAL,
     'libnvpair':    FN_NVPAIR,
+    'libzfs':       FN_ZFS,
 }
 
 INCLUDES = {
     'general':      INC_GENERAL,
     'libnvpair':    INC_NVPAIR,
+    'libzfs':       INC_ZFS,
 }
 
 GENERATE = {
     'general':      GEN_GENERAL,
     'libnvpair':    GEN_NVPAIR,
+    'libzfs':       GEN_ZFS,
 }
 
 
