@@ -2,7 +2,7 @@ import unittest
 import random
 import string
 
-from nose.tools import *
+from nose.tools import *  # noqa
 
 from libzfs.nvpair import NVList, data_type
 
