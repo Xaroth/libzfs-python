@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# flake8: noqa
 #
 # destiny_account documentation build configuration file, created by
 # sphinx-quickstart on Tue Apr 15 00:23:55 2014.
