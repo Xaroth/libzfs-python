@@ -18,7 +18,7 @@ class LibZFSHandle(object):
         if not self._ptr:
             self._ptr = c_libzfs.libzfs_init()
 
-    def __exit__(self):
+    def __exit__(self, exc_type = None, exc_val = None, exc_tb = None):
         if self._ptr is not None:
             c_libzfs.libzfs_fini(self._ptr)
             self._ptr = None
