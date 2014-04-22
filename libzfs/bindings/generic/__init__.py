@@ -14,8 +14,6 @@ from .libzfs import (TYPEDEFS as TD_ZFS,
                      GENERATE as GEN_ZFS,
                      VERSION_SPECIFIC as VERSION_ZFS)
 
-from ... import libzfs_version
-
 TYPEDEFS = {
     'general':      TD_GENERAL,
     'libnvpair':    TD_NVPAIR,

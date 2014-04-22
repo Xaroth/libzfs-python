@@ -378,9 +378,10 @@ typedef enum diff_flags {
     ('snapfilter_cb_t', """
 typedef boolean_t (snapfilter_cb_t)(zfs_handle_t *, void *);
 """),
-    #('zfs_userspace_cb_t', """
-    #    typedef int (*zfs_userspace_cb_t)(void *arg, const char *domain, uid_t rid, uint64_t space);
-    #"""),
+    # TODO: Figure out why this is causing issues.
+    # ('zfs_userspace_cb_t', """
+    #     typedef int (*zfs_userspace_cb_t)(void *arg, const char *domain, uid_t rid, uint64_t space);
+    # """),
     ('zpool_iter_f', """
 typedef int (*zpool_iter_f)(zpool_handle_t *, void *);
 """),
@@ -587,7 +588,7 @@ FUNCTIONS = OrderedDict([
     ('zpool_prop_values', 'const char *zpool_prop_values(zpool_prop_t);'),
     ('zpool_get_status', 'zpool_status_t zpool_get_status(zpool_handle_t *, char **, zpool_errata_t *);'),
     ('zpool_import_status', 'zpool_status_t zpool_import_status(nvlist_t *, char **, zpool_errata_t *);'),
-    #('zpool_dump_ddt', 'void zpool_dump_ddt(const ddt_stat_t *dds, const ddt_histogram_t *ddh);'),  # TODO: ddt_histogram_t
+    # ('zpool_dump_ddt', 'void zpool_dump_ddt(const ddt_stat_t *dds, const ddt_histogram_t *ddh);'),  # TODO: ddt_histogram_t
     ('zpool_get_config', 'nvlist_t *zpool_get_config(zpool_handle_t *, nvlist_t **);'),
     ('zpool_get_features', 'nvlist_t *zpool_get_features(zpool_handle_t *);'),
     ('zpool_refresh_stats', 'int zpool_refresh_stats(zpool_handle_t *, boolean_t *);'),

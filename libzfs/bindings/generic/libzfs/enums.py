@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 zfs_error = IntEnum("zfs_error", [
     ("SUCCESS",         0),  # no error -- success

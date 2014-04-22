@@ -20,7 +20,7 @@ class BindingManager(object):
         self._version_specific = RecursiveDictionary()
         self._verifier = None
 
-    def include(self, functions=None, typedefs=None, includes=None, generate=None, version_specific=None, 
+    def include(self, functions=None, typedefs=None, includes=None, generate=None, version_specific=None,
                 verifier=None):
         if functions:
             self._functions.rec_update(functions)

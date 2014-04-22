@@ -7,7 +7,7 @@ ffi_libzfs = manager.libzfs_ffi
 class LibZFSHandle(object):
     """
     Wrapper class around libzfs_handle_t
-    """    
+    """
 
     _global_ptr = None
 
