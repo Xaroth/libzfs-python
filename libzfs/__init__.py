@@ -10,6 +10,9 @@ except ImportError:
     libzfs_version = detect_libzfs_version()
 
 
+from .handle import LibZFSHandle
+
+
 from .bindings import enums
 __all__ = [
     'enums',
@@ -18,4 +21,6 @@ __all__ = [
     '__version__',
     '__version_info__',
     'libzfs_version',
+
+    'LibZFSHandle',
 ]
