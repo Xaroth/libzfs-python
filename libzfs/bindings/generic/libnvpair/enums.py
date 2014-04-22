@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from enum import IntEnum
 
-DataType = IntEnum('DataType', [
+data_type = IntEnum('data_type', [
     ['UNKNOWN',         0],
     ['BOOLEAN',         1],
     ['BYTE',            2],

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from enum import Enum, IntEnum
 
-ZfsError = IntEnum("ZfsError", [
+zfs_error = IntEnum("zfs_error", [
     ("SUCCESS",         0),  # no error -- success
     ("NOMEM",           2000),  # out of memory
     ("BADPROP",         2001),  # invalid property value
@@ -76,14 +76,14 @@ ZfsError = IntEnum("ZfsError", [
     ("UNKNOWN",         2070),
 ])
 
-ZfsType = IntEnum("ZfsType", [
+zfs_type = IntEnum("zfs_type", [
     ("FILESYSTEM",      0x1),
     ("SNAPSHOT",        0x2),
     ("VOLUME",          0x4),
     ("POOL",            0x8),
 ])
 
-ZfsProp = IntEnum("ZfsProp", [
+zfs_prop = IntEnum("zfs_prop", [
     ('TYPE',            0),
     ('CREATION',        1),
     ('USED',            2),
@@ -159,7 +159,7 @@ ZfsProp = IntEnum("ZfsProp", [
     ('ZFS_NUM_PROPS',   72),
 ])
 
-ZfsUserquotaProp = IntEnum("ZfsUserquotaProp", [
+zfs_userquota_prop = IntEnum("zfs_userquota_prop", [
     ("USERUSED",        0),
     ("USERQUOTA",       1),
     ("GROUPUSED",       2),
@@ -167,7 +167,7 @@ ZfsUserquotaProp = IntEnum("ZfsUserquotaProp", [
     ("NUM_USERQUOTA_PROPS", 4),
 ])
 
-ZfsGetColumn = IntEnum("ZfsGetColumn", [
+zfs_get_column = IntEnum("zfs_get_column", [
     ("NONE",            0),
     ("NAME",            1),
     ("PROPERTY",        2),
@@ -176,7 +176,7 @@ ZfsGetColumn = IntEnum("ZfsGetColumn", [
     ("SOURCE",          5),
 ])
 
-ZpoolProp = IntEnum("ZpoolProp", [
+zpool_prop = IntEnum("zpool_prop", [
     ("NAME",            0),
     ("SIZE",            1),
     ("CAPACITY",        2),
@@ -203,7 +203,7 @@ ZpoolProp = IntEnum("ZpoolProp", [
     ("NUM_PROPS",       23),
 ])
 
-ZpoolStatus = IntEnum("ZpoolStatus", [
+zpool_status = IntEnum("zpool_status", [
     ('CORRUPT_CACHE',   0),
     ('MISSING_DEV_R',   1),
     ('MISSING_DEV_NR',  2),
@@ -232,7 +232,7 @@ ZpoolStatus = IntEnum("ZpoolStatus", [
 
 ])
 
-ZpropSource = IntEnum("ZpropSource", [
+zprop_source = IntEnum("zprop_source", [
     ("NONE",            0x01),
     ("DEFAULT",         0x02),
     ("TEMPORARY",       0x04),
@@ -246,21 +246,21 @@ ZPROP_SOURCE_VAL_RECVD = "$recvd"
 ZPROP_N_MORE_ERRORS = "N_MORE_ERRORS"
 ZPROP_HAS_RECVD = "$hasrecvd"
 
-ZpropDelegWho = Enum("ZpropDelegWho", [
+zfs_deleg_who_type = IntEnum("zfs_deleg_who_type", [
     ("UNKNOWN",         0),
-    ("USER",            'u'),
-    ("USER_SETS",       'U'),
-    ("GROUP",           'g'),
-    ("GROUP_SETS",      'G'),
-    ("EVERYONE",        'e'),
-    ("EVERYONE_SETS",   'E'),
-    ("CREATE",          'c'),
-    ("CREATE_SETS",     'C'),
-    ("NAMED_SET",       's'),
-    ("NAMED_SET_SETS",  'S'),
+    ("USER",            ord('u')),
+    ("USER_SETS",       ord('U')),
+    ("GROUP",           ord('g')),
+    ("GROUP_SETS",      ord('G')),
+    ("EVERYONE",        ord('e')),
+    ("EVERYONE_SETS",   ord('E')),
+    ("CREATE",          ord('c')),
+    ("CREATE_SETS",     ord('C')),
+    ("NAMED_SET",       ord('s')),
+    ("NAMED_SET_SETS",  ord('S')),
 ])
 
-ZfsDelegInherit = IntEnum("ZfsDelegInherit", [
+zfs_deleg_inherit = IntEnum("zfs_deleg_inherit", [
     ("NONE",            0),
     ("PERM_LOCAL",      1),
     ("PERM_DESCENDENT", 2),
@@ -268,13 +268,13 @@ ZfsDelegInherit = IntEnum("ZfsDelegInherit", [
     ("PERM_CREATE",     4),
 ])
 
-DiffFlags = IntEnum("DiffFlags", [
+diff_flags = IntEnum("diff_flags", [
     ("PARSEABLE",       0x01),
     ("TIMESTAMP",       0x02),
     ("CLASSIFY",        0x04),
 ])
 
-VdefState = IntEnum("VdefState", [
+vdef_state = IntEnum("vdef_state", [
     ("UNKNOWN",         0),
     ("CLOSED",          1),
     ("OFFLINE",         2),
@@ -285,7 +285,7 @@ VdefState = IntEnum("VdefState", [
     ("HEALTHY",         7),
 ])
 
-VdefAux = IntEnum("VdefAux", [
+vdef_aux = IntEnum("vdef_aux", [
     ("NONE",            0),
     ("OPEN_FAILED",     1),
     ("CORRUPT_DATA",    2),
@@ -304,7 +304,7 @@ VdefAux = IntEnum("VdefAux", [
     ("SPLIT_POOL",      15),
 ])
 
-PoolState = IntEnum("PoolState", [
+pool_state = IntEnum("pool_state", [
     ("ACTIVE",          0),
     ("EXPORTED",        1),
     ("DESTROYED",       2),
@@ -315,56 +315,56 @@ PoolState = IntEnum("PoolState", [
     ("POTENTIALLY_ACTIVE", 7),
 ])
 
-ZpoolErrata = IntEnum("ZpoolErrata", [
+zpool_errata = IntEnum("zpool_errata", [
     ("NONE",            0),
     ("ZOL_2094_SCRUB",  1),
     ("ZOL_2094_ASYNC_DESTROY", 2)
 ])
 
-ZfsCanMountType = IntEnum("ZfsCanMountType", [
+zfs_canmount_type = IntEnum("zfs_canmount_type", [
     ("OFF",             0),
     ("ON",              1),
     ("NOAUTO",          2),
 ])
 
-ZfsLogBiasOp = IntEnum("ZfsLogBiasOp", [
+zfs_logbias_op = IntEnum("zfs_logbias_op", [
     ("LATENCY",         0),
     ("THROUGHPUT",      1),
 ])
 
-ZfsShareOp = IntEnum("ZfsShareOp", [
+zfs_share_op = IntEnum("zfs_share_op", [
     ("SHARE_NFS",       0),
     ("UNSHARE_NFS",     1),
     ("SHARE_SMB",       2),
     ("UNSHARE_SMB",     3),
 ])
 
-ZfsSmbAclOp = IntEnum("ZfsSmbAclOp", [
+zfs_smb_acl_op = IntEnum("zfs_smb_acl_op", [
     ("ADD",             0),
     ("REMOVE",          1),
     ("RENAME",          2),
     ("PURGE",           3),
 ])
 
-ZfsCacheType = IntEnum("ZfsCacheType", [
+zfs_cache_type = IntEnum("zfs_cache_type", [
     ("NONE",            0),
     ("METADATA",        1),
     ("ALL",             2),
 ])
 
-ZfsSyncType = IntEnum("ZfsSyncType", [
+zfs_sync_type = IntEnum("zfs_sync_type", [
     ("STANDARD",        0),
     ("ALWAYS",          1),
     ("DISABLED",        2),
 ])
 
-ZfsXattrType = IntEnum("ZfsXattrType", [
+zfs_xattr_type = IntEnum("zfs_xattr_type", [
     ("OFF",             0),
     ("DIR",             1),
     ("SA",              2),
 ])
 
-PoolScanFunc = IntEnum("PoolScanFunc", [
+pool_scan_func = IntEnum("pool_scan_func", [
     ("NONE",            0),
     ("SCRUB",           1),
     ("RESILVER",        2),

@@ -1,10 +1,7 @@
-import sys
 from enum import IntEnum
-from .bindings import c_libnvpair, ffi_libnvpair, DataType
+from .bindings import c_libnvpair, ffi_libnvpair, data_type
 
 from ..general import boolean_t
-
-from libzfs.utils import six
 
 
 LOOKUP_DEFAULT = object()
@@ -13,6 +10,7 @@ LOOKUP_DEFAULT = object()
 class NVListFlags(IntEnum):
     UNIQUE_NAME = 1
     UNIQUE_NAME_TYPE = 2
+
 
 class UnknownValue(Exception):
     pass
@@ -101,7 +99,7 @@ class NVList(object):
             raise KeyError(key)
         typeid = c_libnvpair.nvpair_type(holder[0])
         try:
-            dt = DataType(typeid)
+            dt = data_type(typeid)
         except ValueError:
             raise UnknownValue("Unknown type: '%r'" % typeid)
         return dt
@@ -116,7 +114,7 @@ class NVList(object):
                 return default
         typeid = c_libnvpair.nvpair_type(holder[0])
         try:
-            dt = DataType(typeid)
+            dt = data_type(typeid)
         except ValueError:
             raise UnknownValue("Unknown type: '%r'" % typeid)
         info = self.info_for_type(dt)
@@ -139,7 +137,7 @@ class NVList(object):
             name = ffi_libnvpair.string(c_libnvpair.nvpair_name(pair))
             typeid = c_libnvpair.nvpair_type(pair)
             try:
-                dt = DataType(typeid)
+                dt = data_type(typeid)
                 info = self.info_for_type(dt)
             except (ValueError, UnknownValue):
                 if not skip_unknown:
@@ -215,17 +213,17 @@ class NVListHandler(object):
 #  - lookup converter
 #
 NVLIST_HANDLERS = {
-    DataType.BOOLEAN:   NVListHandler('boolean_value', 'boolean_t *', lambda x: bool(x[0]), boolean_t),
-    DataType.BOOLEAN_VALUE: NVListHandler('boolean_value', 'boolean_t *', lambda x: bool(x[0]), boolean_t),
-    DataType.BYTE:      NVListHandler('byte', 'uchar_t *', _to_int, None),
-    DataType.INT8:      NVListHandler('int8', 'int8_t *', _to_int, None),
-    DataType.UINT8:     NVListHandler('uint8', 'uint8_t *', _to_int, None),
-    DataType.INT16:     NVListHandler('int16', 'int16_t *', _to_int, None),
-    DataType.UINT16:    NVListHandler('uint16', 'uint16_t *', _to_int, None),
-    DataType.INT32:     NVListHandler('int32', 'int32_t *', _to_int, None),
-    DataType.UINT32:    NVListHandler('uint32', 'uint32_t *', _to_int, None),
-    DataType.INT64:     NVListHandler('int64', 'int64_t *', _to_int, None),
-    DataType.UINT64:    NVListHandler('uint64', 'uint64_t *', _to_int, None),
-    DataType.STRING:    NVListHandler('string', 'char **', lambda x: ffi_libnvpair.string(x[0]), None),
-    DataType.NVLIST:    NVListHandler('nvlist', 'nvlist_t **', NVList.from_nvlist_handle, False)
+    data_type.BOOLEAN:   NVListHandler('boolean_value', 'boolean_t *', lambda x: bool(x[0]), boolean_t),
+    data_type.BOOLEAN_VALUE: NVListHandler('boolean_value', 'boolean_t *', lambda x: bool(x[0]), boolean_t),
+    data_type.BYTE:      NVListHandler('byte', 'uchar_t *', _to_int, None),
+    data_type.INT8:      NVListHandler('int8', 'int8_t *', _to_int, None),
+    data_type.UINT8:     NVListHandler('uint8', 'uint8_t *', _to_int, None),
+    data_type.INT16:     NVListHandler('int16', 'int16_t *', _to_int, None),
+    data_type.UINT16:    NVListHandler('uint16', 'uint16_t *', _to_int, None),
+    data_type.INT32:     NVListHandler('int32', 'int32_t *', _to_int, None),
+    data_type.UINT32:    NVListHandler('uint32', 'uint32_t *', _to_int, None),
+    data_type.INT64:     NVListHandler('int64', 'int64_t *', _to_int, None),
+    data_type.UINT64:    NVListHandler('uint64', 'uint64_t *', _to_int, None),
+    data_type.STRING:    NVListHandler('string', 'char **', lambda x: ffi_libnvpair.string(x[0]), None),
+    data_type.NVLIST:    NVListHandler('nvlist', 'nvlist_t **', NVList.from_nvlist_handle, False)
 }

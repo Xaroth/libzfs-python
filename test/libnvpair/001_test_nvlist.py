@@ -4,13 +4,13 @@ import string
 
 from nose.tools import *
 
-from libzfs.nvpair import NVList, DataType
+from libzfs.nvpair import NVList, data_type
 
 
 class Test_libnvpair(unittest.TestCase):
     def test_001_add_lookup_int(self):
         data = random.randint(1, 65535)
-        dt = DataType.UINT64
+        dt = data_type.UINT64
         print "Random data: %r" % data
 
         nvlist = NVList()
@@ -23,7 +23,7 @@ class Test_libnvpair(unittest.TestCase):
     def test_002_add_lookup_string(self):
         length = random.randint(32, 128)
         data = ''.join([random.choice(string.ascii_letters) for x in range(length)])
-        dt = DataType.STRING
+        dt = data_type.STRING
         print "Random data: %r" % data
 
         nvlist = NVList()
@@ -35,7 +35,7 @@ class Test_libnvpair(unittest.TestCase):
 
     def test_003_add_lookup_bool(self):
         data = bool(random.randint(0, 1))
-        dt = DataType.BOOLEAN
+        dt = data_type.BOOLEAN
         print "Random data: %r" % data
 
         nvlist = NVList()
@@ -48,9 +48,9 @@ class Test_libnvpair(unittest.TestCase):
     def test_004_add_lookup_smart(self):
         length = random.randint(32, 128)
         items = {
-            'int': [random.randint(1, 65535), DataType.UINT64],
-            'string': [''.join([random.choice(string.ascii_letters) for x in range(length)]), DataType.STRING],
-            'bool': [bool(random.randint(0, 1)), DataType.BOOLEAN]
+            'int': [random.randint(1, 65535), data_type.UINT64],
+            'string': [''.join([random.choice(string.ascii_letters) for x in range(length)]), data_type.STRING],
+            'bool': [bool(random.randint(0, 1)), data_type.BOOLEAN]
         }
 
         nvlist = NVList()
