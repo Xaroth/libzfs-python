@@ -11,3 +11,9 @@ TYPEDEFS = OrderedDict([
 ])
 
 FUNCTIONS = OrderedDict()
+
+VERSION_SPECIFIC = {
+    "0.6.2": [
+
+    ]
+}

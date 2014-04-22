@@ -1,5 +1,7 @@
 from .enums import (ZfsError, ZfsType, ZfsProp, ZfsUserquotaProp, ZpoolProp, ZpropSource,
-                    ZpropDelegWho, ZfsDelegInherit)
+                    ZpropDelegWho, ZfsDelegInherit, ZfsGetColumn, ZpoolStatus, DiffFlags,
+                    VdefState, VdefAux, PoolState, ZpoolErrata, ZfsCanMountType, ZfsLogBiasOp,
+                    ZfsShareOp, ZfsSmbAclOp, ZfsCacheType, ZfsSyncType, ZfsXattrType, PoolScanFunc)
 from .enums import (ZPROP_SRC_ALL, ZPROP_SOURCE_VAL_RECVD, ZPROP_N_MORE_ERRORS, ZPROP_HAS_RECVD,
                     ZPOOL_CONFIG_VERSION, ZPOOL_CONFIG_POOL_NAME, ZPOOL_CONFIG_POOL_STATE,
                     ZPOOL_CONFIG_POOL_TXG, ZPOOL_CONFIG_POOL_GUID, ZPOOL_CONFIG_CREATE_TXG,
@@ -25,7 +27,7 @@ from .enums import (ZPROP_SRC_ALL, ZPROP_SOURCE_VAL_RECVD, ZPROP_N_MORE_ERRORS, 
                     ZPOOL_CONFIG_AUX_STATE, VDEV_TYPE_ROOT, VDEV_TYPE_MIRROR, VDEV_TYPE_REPLACING,
                     VDEV_TYPE_RAIDZ, VDEV_TYPE_DISK, VDEV_TYPE_FILE, VDEV_TYPE_MISSING, VDEV_TYPE_HOLE,
                     VDEV_TYPE_SPARE, VDEV_TYPE_LOG, VDEV_TYPE_L2CACHE)
-from .cdefs import TYPEDEFS, FUNCTIONS
+from .cdefs import TYPEDEFS, FUNCTIONS, VERSION_SPECIFIC
 
 INCLUDES = ['libnvpair']
 GENERATE = True
@@ -39,6 +41,21 @@ __all__ = [
     'ZpropSource',
     'ZpropDelegWho',
     'ZfsDelegInherit',
+    'ZfsGetColumn',
+    'ZpoolStatus',
+    'DiffFlags',
+    'VdefState',
+    'VdefAux',
+    'PoolState',
+    'ZpoolErrata',
+    'ZfsCanMountType',
+    'ZfsLogBiasOp',
+    'ZfsShareOp',
+    'ZfsSmbAclOp',
+    'ZfsCacheType',
+    'ZfsSyncType',
+    'ZfsXattrType',
+    'PoolScanFunc',
 
     'ZPROP_SRC_ALL',
     'ZPROP_SOURCE_VAL_RECVD',
@@ -127,4 +144,5 @@ __all__ = [
     'TYPEDEFS',
     'FUNCTIONS',
     'INCLUDES',
+    'VERSION_SPECIFIC',
 ]

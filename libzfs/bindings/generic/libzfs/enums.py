@@ -167,6 +167,15 @@ ZfsUserquotaProp = IntEnum("ZfsUserquotaProp", [
     ("NUM_USERQUOTA_PROPS", 4),
 ])
 
+ZfsGetColumn = IntEnum("ZfsGetColumn", [
+    ("NONE",            0),
+    ("NAME",            1),
+    ("PROPERTY",        2),
+    ("VALUE",           3),
+    ("RECVD",           4),
+    ("SOURCE",          5),
+])
+
 ZpoolProp = IntEnum("ZpoolProp", [
     ("NAME",            0),
     ("SIZE",            1),
@@ -192,6 +201,35 @@ ZpoolProp = IntEnum("ZpoolProp", [
     ("EXPANDSZ",        21),
     ("FREEING",         22),
     ("NUM_PROPS",       23),
+])
+
+ZpoolStatus = IntEnum("ZpoolStatus", [
+    ('CORRUPT_CACHE',   0),
+    ('MISSING_DEV_R',   1),
+    ('MISSING_DEV_NR',  2),
+    ('CORRUPT_LABEL_R', 3),
+    ('CORRUPT_LABEL_NR', 4),
+    ('BAD_GUID_SUM',    5),
+    ('CORRUPT_POOL',    6),
+    ('CORRUPT_DATA',    7),
+    ('FAILING_DEV',     8),
+    ('VERSION_NEWER',   9),
+    ('HOSTID_MISMATCH', 10),
+    ('IO_FAILURE_WAIT', 11),
+    ('IO_FAILURE_CONTINUE', 12),
+    ('BAD_LOG',         13),
+    ('ERRATA',          14),
+    ('UNSUP_FEAT_READ', 15),
+    ('UNSUP_FEAT_WRITE', 16),
+    ('FAULTED_DEV_R',   17),
+    ('FAULTED_DEV_NR',  18),
+    ('VERSION_OLDER',   19),
+    ('FEAT_DISABLED',   20),
+    ('RESILVERING',     21),
+    ('OFFLINE_DEV',     22),
+    ('REMOVED_DEV',     23),
+    ('OK',              24),
+
 ])
 
 ZpropSource = IntEnum("ZpropSource", [
@@ -228,6 +266,109 @@ ZfsDelegInherit = IntEnum("ZfsDelegInherit", [
     ("PERM_DESCENDENT", 2),
     ("PERM_LOCALDESCENDENT", 3),
     ("PERM_CREATE",     4),
+])
+
+DiffFlags = IntEnum("DiffFlags", [
+    ("PARSEABLE",       0x01),
+    ("TIMESTAMP",       0x02),
+    ("CLASSIFY",        0x04),
+])
+
+VdefState = IntEnum("VdefState", [
+    ("UNKNOWN",         0),
+    ("CLOSED",          1),
+    ("OFFLINE",         2),
+    ("REMOVED",         3),
+    ("CANT_OPEN",       4),
+    ("FAULTED",         5),
+    ("DEGRADED",        6),
+    ("HEALTHY",         7),
+])
+
+VdefAux = IntEnum("VdefAux", [
+    ("NONE",            0),
+    ("OPEN_FAILED",     1),
+    ("CORRUPT_DATA",    2),
+    ("NO_REPLICAS",     3),
+    ("BAD_GUID_SUM",    4),
+    ("TOO_SMALL",       5),
+    ("BAD_LABEL",       6),
+    ("VERSION_NEWER",   7),
+    ("VERSION_OLDER",   8),
+    ("UNSUP_FEAT",      9),
+    ("SPARED",          10),
+    ("ERR_EXCEEDED",    11),
+    ("IO_FAILURE",      12),
+    ("BAD_LOG",         13),
+    ("EXTERNAL",        14),
+    ("SPLIT_POOL",      15),
+])
+
+PoolState = IntEnum("PoolState", [
+    ("ACTIVE",          0),
+    ("EXPORTED",        1),
+    ("DESTROYED",       2),
+    ("SPARE",           3),
+    ("L2CACHE",         4),
+    ("UNINITIALIZED",   5),
+    ("UNAVAIL",         6),
+    ("POTENTIALLY_ACTIVE", 7),
+])
+
+ZpoolErrata = IntEnum("ZpoolErrata", [
+    ("NONE",            0),
+    ("ZOL_2094_SCRUB",  1),
+    ("ZOL_2094_ASYNC_DESTROY", 2)
+])
+
+ZfsCanMountType = IntEnum("ZfsCanMountType", [
+    ("OFF",             0),
+    ("ON",              1),
+    ("NOAUTO",          2),
+])
+
+ZfsLogBiasOp = IntEnum("ZfsLogBiasOp", [
+    ("LATENCY",         0),
+    ("THROUGHPUT",      1),
+])
+
+ZfsShareOp = IntEnum("ZfsShareOp", [
+    ("SHARE_NFS",       0),
+    ("UNSHARE_NFS",     1),
+    ("SHARE_SMB",       2),
+    ("UNSHARE_SMB",     3),
+])
+
+ZfsSmbAclOp = IntEnum("ZfsSmbAclOp", [
+    ("ADD",             0),
+    ("REMOVE",          1),
+    ("RENAME",          2),
+    ("PURGE",           3),
+])
+
+ZfsCacheType = IntEnum("ZfsCacheType", [
+    ("NONE",            0),
+    ("METADATA",        1),
+    ("ALL",             2),
+])
+
+ZfsSyncType = IntEnum("ZfsSyncType", [
+    ("STANDARD",        0),
+    ("ALWAYS",          1),
+    ("DISABLED",        2),
+])
+
+ZfsXattrType = IntEnum("ZfsXattrType", [
+    ("OFF",             0),
+    ("DIR",             1),
+    ("SA",              2),
+])
+
+PoolScanFunc = IntEnum("PoolScanFunc", [
+    ("NONE",            0),
+    ("SCRUB",           1),
+    ("RESILVER",        2),
+    ("FUNCS",           3),
 ])
 
 ZPOOL_CONFIG_VERSION = "version"

@@ -1,6 +1,8 @@
 from .libnvpair import DataType
 from .libzfs import (ZfsError, ZfsType, ZfsProp, ZfsUserquotaProp, ZpoolProp, ZpropSource,
-                    ZpropDelegWho, ZfsDelegInherit)
+                    ZpropDelegWho, ZfsDelegInherit, ZfsGetColumn, ZpoolStatus, DiffFlags,
+                    VdefState, VdefAux, PoolState, ZpoolErrata, ZfsCanMountType, ZfsLogBiasOp,
+                    ZfsShareOp, ZfsSmbAclOp, ZfsCacheType, ZfsSyncType, ZfsXattrType, PoolScanFunc)
 from .libzfs import (ZPROP_SRC_ALL, ZPROP_SOURCE_VAL_RECVD, ZPROP_N_MORE_ERRORS, ZPROP_HAS_RECVD,
                     ZPOOL_CONFIG_VERSION, ZPOOL_CONFIG_POOL_NAME, ZPOOL_CONFIG_POOL_STATE,
                     ZPOOL_CONFIG_POOL_TXG, ZPOOL_CONFIG_POOL_GUID, ZPOOL_CONFIG_CREATE_TXG,
@@ -37,6 +39,21 @@ __all__ = [
     'ZpropSource',
     'ZpropDelegWho',
     'ZfsDelegInherit',
+    'ZfsGetColumn',
+    'ZpoolStatus',
+    'DiffFlags',
+    'VdefState',
+    'VdefAux',
+    'PoolState',
+    'ZpoolErrata',
+    'ZfsCanMountType',
+    'ZfsLogBiasOp',
+    'ZfsShareOp',
+    'ZfsSmbAclOp',
+    'ZfsCacheType',
+    'ZfsSyncType',
+    'ZfsXattrType',
+    'PoolScanFunc',
 
     'ZPROP_SRC_ALL',
     'ZPROP_SOURCE_VAL_RECVD',

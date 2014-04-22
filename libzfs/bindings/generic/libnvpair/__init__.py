@@ -1,5 +1,5 @@
 from .enums import DataType
-from .cdefs import TYPEDEFS, FUNCTIONS
+from .cdefs import TYPEDEFS, FUNCTIONS, VERSION_SPECIFIC
 
 INCLUDES = ['general']
 GENERATE = True
@@ -10,4 +10,5 @@ __all__ = [
     'TYPEDEFS',
     'FUNCTIONS',
     'INCLUDES',
+    'VERSION_SPECIFIC',
 ]

@@ -236,3 +236,9 @@ FUNCTIONS = OrderedDict([
     ('fnvpair_value_string', 'char *fnvpair_value_string(nvpair_t *nvp);'),
     ('fnvpair_value_nvlist', 'nvlist_t *fnvpair_value_nvlist(nvpair_t *nvp);'),
 ])
+
+VERSION_SPECIFIC = {
+    "0.6.2": [
+
+    ]
+}

@@ -1,15 +1,20 @@
 from .general import (TYPEDEFS as TD_GENERAL,
                       FUNCTIONS as FN_GENERAL,
                       INCLUDES as INC_GENERAL,
-                      GENERATE as GEN_GENERAL)
+                      GENERATE as GEN_GENERAL,
+                      VERSION_SPECIFIC as VERSION_GENERAL)
 from .libnvpair import (TYPEDEFS as TD_NVPAIR,
                         FUNCTIONS as FN_NVPAIR,
                         INCLUDES as INC_NVPAIR,
-                        GENERATE as GEN_NVPAIR)
+                        GENERATE as GEN_NVPAIR,
+                        VERSION_SPECIFIC as VERSION_NVPAIR)
 from .libzfs import (TYPEDEFS as TD_ZFS,
                      FUNCTIONS as FN_ZFS,
                      INCLUDES as INC_ZFS,
-                     GENERATE as GEN_ZFS)
+                     GENERATE as GEN_ZFS,
+                     VERSION_SPECIFIC as VERSION_ZFS)
+
+from ... import libzfs_version
 
 TYPEDEFS = {
     'general':      TD_GENERAL,
@@ -33,6 +38,12 @@ GENERATE = {
     'general':      GEN_GENERAL,
     'libnvpair':    GEN_NVPAIR,
     'libzfs':       GEN_ZFS,
+}
+
+VERSION_SPECIFIC = {
+    'general':      VERSION_GENERAL,
+    'libnvpair':    VERSION_NVPAIR,
+    'libzfs':       VERSION_ZFS,
 }
 
 
@@ -60,4 +71,5 @@ __all__ = [
     'TYPEDEFS',
     'FUNCTIONS',
     'INCLUDES',
+    'VERSION_SPECIFIC',
 ]

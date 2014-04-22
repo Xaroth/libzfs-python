@@ -6,6 +6,8 @@ INCLUDES = {}
 
 GENERATE = {}
 
+VERSION_SPECIFIC = {}
+
 verify = None
 
 __all__ = [

@@ -1,10 +1,11 @@
 from setuptools import setup, find_packages
+from setuptools.command.install import install
 import sys
 import os
+from os.path import join, abspath, dirname
 
 NAME = "libzfs"
 VERBOSE_NAME = "libzfs"
-VERSION = '0.0.1'
 
 DESC = """
 Python CFFI bindings for libzfs
@@ -64,9 +65,26 @@ console_scripts = entrypoints['console_scripts'] = [
 ]
 
 import libzfs
+from libzfs.utils.version import detect_libzfs_version
+VERSION = libzfs.__version__
 
 if os.environ.get('SETUP_NORUN'):
     setup = lambda *args, **kwargs: None  # noqa
+
+
+class CustomInstall(install):
+    def run(self):
+        print("Detected libzfs version: %s" % libzfs.libzfs_version)
+        fname = join(dirname(abspath(__file__)), 'libzfs', '_zfsversion.py')
+        with open(fname, 'w') as fh:
+            fh.write("""
+#
+# Auto-generated during install
+#  set the environment variable LIBZFS_VERSION while installing to manually adjust
+#
+libzfs_version = '%s'
+""" % detect_libzfs_version())
+        install.run(self)
 
 setup(
     name=NAME,
@@ -85,4 +103,7 @@ setup(
     long_description=DESC,
     extras_require={},
     ext_modules=libzfs.bindings.manager.get_extensions(),
+    cmdclass={
+        'install': CustomInstall,
+    },
     **extra)
