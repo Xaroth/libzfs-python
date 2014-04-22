@@ -33,7 +33,7 @@ class NVList(object):
 
     __enter__ = alloc
 
-    def free(self, exc_type, exc_val, exc_tb):
+    def free(self, exc_type = None, exc_val = None, exc_tb = None):
         if self._handle and self._free:
             c_libnvpair.nvlist_free(self.ptr)
             self._handle = None
