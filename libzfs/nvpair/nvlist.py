@@ -73,7 +73,7 @@ class NVList(object):
     def info_for_type(cls, type):
         info = NVLIST_HANDLERS.get(type)
         if info is None:
-            raise Exception("Unknown type: '%r'" % type)
+            raise UnknownValue("Unknown type: '%r'" % type)
         return info
 
     def add(self, key, type, value):
@@ -130,7 +130,7 @@ class NVList(object):
     def dump(self):
         return c_libnvpair.dump_nvlist(self.ptr, 0)
 
-    def to_dict(self, skip_unknown = False):
+    def to_dict(self, skip_unknown = False, deep = True):
         data = {}
         pair = c_libnvpair.nvlist_next_nvpair(self.ptr, ffi_libnvpair.NULL)
         while pair != ffi_libnvpair.NULL:
@@ -149,9 +149,9 @@ class NVList(object):
             val = info.nvpair_value(pair, valholder)
             if not bool(val):
                 value = info.convert(valholder)
-                if value is NVList:
+                if deep and isinstance(value, NVList):
                     with value:
-                        data[name] = value.to_dict()
+                        data[name] = value.to_dict(skip_unknown = skip_unknown)
                 else:
                     data[name] = value
 
