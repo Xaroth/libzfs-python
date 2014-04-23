@@ -120,9 +120,14 @@ class NVList(object):
         info = self.info_for_type(dt)
 
         valholder = info.create_holder()
-        val = info.nvpair_value(holder[0], valholder)
+        countholder = None
+        if info.is_array:
+            countholder = info.create_count_holder()
+            val = info.nvpair_value(holder[0], valholder, countholder)
+        else:
+            val = info.nvpair_value(holder[0], valholder)
         if not bool(val):
-            return info.convert(valholder)
+            return info.convert(valholder, countholder)
         elif default is not LOOKUP_DEFAULT:
             return default
         raise KeyError(key)
@@ -143,15 +148,30 @@ class NVList(object):
                 if not skip_unknown:
                     raise UnknownValue("Unknown type: '%r'" % typeid)
                 else:
+                    try:
+                        dt = data_type(typeid)
+                    except:
+                        dt = (None, typeid, None)
+                    data[name] = dt
                     pair = c_libnvpair.nvlist_next_nvpair(self.ptr, pair)
                     continue
             valholder = info.create_holder()
-            val = info.nvpair_value(pair, valholder)
+            countholder = None
+            if info.is_array:
+                countholder = info.create_count_holder()
+                val = info.nvpair_value(pair, valholder, countholder)
+            else:
+                val = info.nvpair_value(pair, valholder)
             if not bool(val):
-                value = info.convert(valholder)
+                value = info.convert(valholder, countholder)
                 if deep and isinstance(value, NVList):
                     with value:
                         data[name] = value.to_dict(skip_unknown = skip_unknown)
+                elif deep and isinstance(value, list) and isinstance(value[0], NVList):
+                    temp = data[name] = []
+                    for item in value:
+                        with item:
+                            temp.append(item.to_dict(skip_unknown = skip_unknown))
                 else:
                     data[name] = value
 
@@ -160,25 +180,35 @@ class NVList(object):
 
 
 def _to_int(hdl):
+    if isinstance(hdl, (int, long)):
+        return int(hdl)
     return int(hdl[0])
 
 
 def _to_long(hdl):
+    if isinstance(hdl, (int, long)):
+        return long(hdl)
     return long(hdl[0])
 
 
 class NVListHandler(object):
-    def __init__(self, funcname, typename, converter, add_converter = None):
+    def __init__(self, funcname, typename, converter, add_converter = None, is_array = False):
         self._funcname = funcname
         self._typename = typename
         self._converter = converter
         self._add_converter = add_converter
+        self._is_array = is_array
 
     def create_holder(self):
         return ffi_libnvpair.new(self._typename)
 
-    def convert(self, x):
+    def create_count_holder(self):
+        return ffi_libnvpair.new('uint_t *')
+
+    def convert(self, x, count = None):
         if self._converter:
+            if self.is_array:
+                return self._converter(x, count)
             return self._converter(x)
         return x
 
@@ -204,6 +234,20 @@ class NVListHandler(object):
     def nvpair_value(self):
         return self._get_c_func('nvpair_value')
 
+    @property
+    def is_array(self):
+        return self._is_array
+
+
+def _array_converter(converter):
+    def _inner(x, count):
+        items = []
+        for i in range(count[0]):
+            items.append(converter(x[0][i]))
+        return items
+    return _inner
+
+
 #
 # Key: configuration
 #  - add func
@@ -225,5 +269,17 @@ NVLIST_HANDLERS = {
     data_type.INT64:     NVListHandler('int64', 'int64_t *', _to_int, None),
     data_type.UINT64:    NVListHandler('uint64', 'uint64_t *', _to_int, None),
     data_type.STRING:    NVListHandler('string', 'char **', lambda x: ffi_libnvpair.string(x[0]), None),
-    data_type.NVLIST:    NVListHandler('nvlist', 'nvlist_t **', NVList.from_nvlist_handle, False)
+    data_type.NVLIST:    NVListHandler('nvlist', 'nvlist_t **', NVList.from_nvlist_handle, False),
+
+    data_type.BYTE_ARRAY:   NVListHandler('byte_array', 'uchar_t **', _array_converter(_to_int), None),
+    data_type.INT8_ARRAY:   NVListHandler('int8_array', 'int8_t **', _array_converter(_to_int), False, True),
+    data_type.UINT8_ARRAY:  NVListHandler('uint8_array', 'uint8_t **', _array_converter(_to_int), False, True),
+    data_type.INT16_ARRAY:  NVListHandler('int16_array', 'int16_t **', _array_converter(_to_int), False, True),
+    data_type.UINT16_ARRAY: NVListHandler('uint16_array', 'uint16_t **', _array_converter(_to_int), False, True),
+    data_type.INT32_ARRAY:  NVListHandler('int32_array', 'int32_t **', _array_converter(_to_int), False, True),
+    data_type.UINT32_ARRAY: NVListHandler('uint32_array', 'uint32_t **', _array_converter(_to_int), False, True),
+    data_type.INT64_ARRAY:  NVListHandler('int64_array', 'int64_t **', _array_converter(_to_int), False, True),
+    data_type.UINT64_ARRAY: NVListHandler('uint64_array', 'uint64_t **', _array_converter(_to_int), False, True),
+    data_type.NVLIST_ARRAY: NVListHandler('nvlist_array', 'nvlist_t ***', _array_converter(NVList.from_nvlist_ptr), False, True),
+    data_type.STRING_ARRAY: NVListHandler('string_array', 'char ***', _array_converter(lambda x: ffi_libnvpair.string(x)), False, True),
 }
