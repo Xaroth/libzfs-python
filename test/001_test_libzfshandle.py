@@ -12,3 +12,13 @@ class Test_LibZFSHandle(unittest.TestCase):
         LibZFSHandle.init()
 
         LibZFSHandle.fini()
+
+    def test_003_multiple(self):
+        with LibZFSHandle() as ptr:
+            ptr2 = LibZFSHandle.init()
+            refcount = LibZFSHandle.refcount()
+            LibZFSHandle.fini()
+
+            assert refcount > 1
+            assert ptr == ptr2
+            assert LibZFSHandle.refcount() == (refcount - 1)
