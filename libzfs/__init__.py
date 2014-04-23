@@ -11,6 +11,7 @@ except ImportError:
 
 
 from .handle import LibZFSHandle
+from .zpool import ZPool
 
 
 from .bindings import enums
@@ -23,4 +24,6 @@ __all__ = [
     'libzfs_version',
 
     'LibZFSHandle',
+
+    'ZPool',
 ]
