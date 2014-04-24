@@ -1,5 +1,10 @@
 import os
-uname = os.uname()[0].lower()
+try:
+    uname = os.uname()[0].lower()
+except AttributeError:
+    # uname is not available, we're most likely running on a non-unix-like system
+    # (aka windows)
+    uname = 'unknown'
 
 from .generic.enums import *  # noqa
 

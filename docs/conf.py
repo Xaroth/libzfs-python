@@ -18,6 +18,7 @@ import os
 from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ['SETUP_NORUN'] = '1'
+os.environ['MOCK_CFFI'] = '1'
 import setup as setup_info  # noqa
 
 

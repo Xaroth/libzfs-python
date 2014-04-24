@@ -2,9 +2,12 @@ from __future__ import absolute_import
 import logging
 import os
 from pkg_resources import parse_version
-uname = os.uname()[0].lower()
-
-from cffi import FFI
+try:
+    uname = os.uname()[0].lower()
+except AttributeError:
+    # uname is not available, we're most likely running on a non-unix-like system
+    # (aka windows)
+    uname = 'unknown'
 
 from .generic import TYPEDEFS, FUNCTIONS, INCLUDES, GENERATE, VERSION_SPECIFIC, verify
 from ..utils.recursivedict import RecursiveDictionary
@@ -50,6 +53,8 @@ class BindingManager(object):
         return [line for key, line in defs.items() if line and key not in ignorelist]
 
     def generate_item(self, item):
+        from cffi import FFI
+
         if item in self.items:
             self.log.info("'%s' already generated", item)
             return self.items[item], self.ffi[item]
@@ -81,6 +86,15 @@ class BindingManager(object):
         self.items[item] = generated
         self.ffi[item] = ffi
         return generated, ffi
+
+    def mock_accessors(self):
+        self.log.info('Mocking the accessors for our cffi libraries.')
+        keys = set(self._functions.keys()) | set(self._typedefs.keys())
+        self.items = {}
+        self.ffi = {}
+        for item in keys:
+            setattr(self, item, None)
+            setattr(self, '%s_ffi' % item, None)
 
     def generate(self):
         self.log.info("Generating all modules")
@@ -117,7 +131,11 @@ elif 'freebsd' in uname:
     manager.log.info("Loading bsd-specific information")
 elif 'darwin' in uname:
     manager.log.info("Loading osx-specific information")
-manager.generate()
+
+if os.environ.get('MOCK_CFFI', False) != '1':
+    manager.generate()
+else:
+    manager.mock_accessors()
 
 
 __all__ = [
