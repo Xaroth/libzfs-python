@@ -49,14 +49,15 @@ class NVList(object):
         return self._handle
 
     @classmethod
-    def from_nvlist_ptr(cls, ptr):
+    def from_nvlist_ptr(cls, ptr, **kwargs):
         nvlist = ffi_libnvpair.new('nvlist_t **')
         nvlist[0] = ptr
-        return cls.from_nvlist_handle(nvlist)  # We're already allocated
+        return cls.from_nvlist_handle(nvlist, **kwargs)  # We're already allocated
 
     @classmethod
-    def from_nvlist_handle(cls, hdl):
-        return cls(handle=hdl, alloc=False)
+    def from_nvlist_handle(cls, hdl, **kwargs):
+        kwargs.setdefault('alloc', False)
+        return cls(handle=hdl, **kwargs)
 
     def update(self, arg=None, **kwargs):
         if arg:
@@ -165,11 +166,13 @@ class NVList(object):
             if not bool(val):
                 value = info.convert(valholder, countholder)
                 if deep and isinstance(value, NVList):
+                    value._free = self._free
                     with value:
                         data[name] = value.to_dict(skip_unknown = skip_unknown)
                 elif deep and isinstance(value, list) and isinstance(value[0], NVList):
                     temp = data[name] = []
                     for item in value:
+                        item._free = self._free
                         with item:
                             temp.append(item.to_dict(skip_unknown = skip_unknown))
                 else:
