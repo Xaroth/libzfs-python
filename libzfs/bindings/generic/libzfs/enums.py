@@ -156,7 +156,7 @@ zfs_prop = IntEnum("zfs_prop", [
     ('SELINUX_DEFCONTEXT', 69),
     ('SELINUX_ROOTCONTEXT', 70),
     ('RELATIME',        71),
-    ('ZFS_NUM_PROPS',   72),
+    ('NUM_PROPS',   72),
 ])
 
 zfs_userquota_prop = IntEnum("zfs_userquota_prop", [
@@ -449,3 +449,8 @@ VDEV_TYPE_HOLE = "hole"
 VDEV_TYPE_SPARE = "spare"
 VDEV_TYPE_LOG = "log"
 VDEV_TYPE_L2CACHE = "l2cache"
+
+
+MAXNAMELEN = 256
+ZFS_MAXNAMELEN = MAXNAMELEN
+ZPOOL_MAXNAMELEN = MAXNAMELEN
