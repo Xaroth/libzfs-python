@@ -119,7 +119,7 @@ class ZPool(object):
     def config(self):
         if self._config is None:
             config = c_libzfs.zpool_get_config(self.hdl, ffi_libzfs.new_handle(None))
-            config_list = NVList.from_nvlist_ptr(config)
+            config_list = NVList.from_nvlist_ptr(config, free=False)
             with config_list:
                 self._config = config_list.to_dict(skip_unknown = True)
         return self._config
