@@ -2,7 +2,8 @@ from .libnvpair import data_type
 from .libzfs import (zfs_error, zfs_type, zfs_prop, zfs_userquota_prop, zpool_prop, zprop_source,
                     zfs_deleg_who_type, zfs_deleg_inherit, zfs_get_column, zpool_status, diff_flags,
                     vdef_state, vdef_aux, pool_state, zpool_errata, zfs_canmount_type, zfs_logbias_op,
-                    zfs_share_op, zfs_smb_acl_op, zfs_cache_type, zfs_sync_type, zfs_xattr_type, pool_scan_func)
+                    zfs_share_op, zfs_smb_acl_op, zfs_cache_type, zfs_sync_type, zfs_xattr_type, pool_scan_func,
+                    dsl_scan_state)
 from .libzfs import (ZPROP_SRC_ALL, ZPROP_SOURCE_VAL_RECVD, ZPROP_N_MORE_ERRORS, ZPROP_HAS_RECVD,
                     ZPOOL_CONFIG_VERSION, ZPOOL_CONFIG_POOL_NAME, ZPOOL_CONFIG_POOL_STATE,
                     ZPOOL_CONFIG_POOL_TXG, ZPOOL_CONFIG_POOL_GUID, ZPOOL_CONFIG_CREATE_TXG,
@@ -54,6 +55,7 @@ __all__ = [
     'zfs_sync_type',
     'zfs_xattr_type',
     'pool_scan_func',
+    'dsl_scan_state',
 
     'ZPROP_SRC_ALL',
     'ZPROP_SOURCE_VAL_RECVD',

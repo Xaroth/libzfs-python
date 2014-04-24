@@ -371,6 +371,14 @@ pool_scan_func = IntEnum("pool_scan_func", [
     ("FUNCS",           3),
 ])
 
+dsl_scan_state = IntEnum("dsl_scan_state", [
+    ("NONE",            0),
+    ("SCANNING",        1),
+    ("FINISHED",        2),
+    ("CANCELED",        3),
+    ("NUM_STATES",      4),
+])
+
 ZPOOL_CONFIG_VERSION = "version"
 ZPOOL_CONFIG_POOL_NAME = "name"
 ZPOOL_CONFIG_POOL_STATE = "state"

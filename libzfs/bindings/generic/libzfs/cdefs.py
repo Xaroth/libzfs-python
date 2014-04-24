@@ -532,6 +532,15 @@ typedef struct importargs {
     int exists : 1;     /* set on return if pool already exists */
 } importargs_t;
 """),
+    ('dsl_scan_state_t', """
+typedef enum dsl_scan_state {
+    DSS_NONE,
+    DSS_SCANNING,
+    DSS_FINISHED,
+    DSS_CANCELED,
+    DSS_NUM_STATES
+} dsl_scan_state_t;
+"""),
 ])
 
 FUNCTIONS = OrderedDict([
