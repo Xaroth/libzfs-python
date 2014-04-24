@@ -61,6 +61,10 @@ class ZPool(object):
     _state = None
     _config = None
 
+    _status = None
+    _status_extra = None
+    _errata = None
+
     def __init__(self, handle):
         self._handle = handle
         self.properties = ZPoolProperties(self)
@@ -81,6 +85,35 @@ class ZPool(object):
             state = c_libzfs.zpool_get_state(self.hdl)
             self._state = enums.pool_state(state)
         return self._state
+
+    def _get_status(self):
+        if self._status is None:
+            msgid = ffi_libzfs.new('char **')
+            errata = ffi_libzfs.new('zpool_errata_t *')
+
+            reason = c_libzfs.zpool_get_status(self.hdl, msgid, errata)
+
+            self._status = enums.zpool_status(reason)
+            if msgid[0] == ffi_libzfs.NULL:
+                self._status_extra = ''
+            else:
+                self._status_extra = ffi_libzfs.string(msgid[0])
+            self._errata = enums.zpool_errata(errata[0])
+
+    @property
+    def status_extra(self):
+        self._get_status()
+        return self._status_extra
+
+    @property
+    def status(self):
+        self._get_status()
+        return self._status
+
+    @property
+    def errata(self):
+        self._get_status()
+        return self._errata
 
     @property
     def config(self):
