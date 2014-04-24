@@ -12,9 +12,6 @@ class ZPoolProperties(object):
     def __init__(self, pool):
         self._pool = pool
 
-        self._properties = {}
-        self._propinfo = {}
-
     @LibZFSHandle.requires_refcount
     def items(self):
         with LibZFSHandle():
