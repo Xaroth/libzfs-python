@@ -12,7 +12,14 @@ class NoHandleException(Exception):
 
 class LibZFSHandle(object):
     """
-    Wrapper class around libzfs_handle_t
+    Wrapper class around libzfs_handle_t.
+
+    You can use ``LibZFSHandle`` as a context manager, or using the class methods :py:func:`LibZFSHandle.init`
+    and :py:func:`LibZFSHandle.fini`.
+
+    Furthermore, the decorator functions :py:func:`LibZFSHandle.requires_refcount` and :py:func:`LibZFSHandle.auto`
+    provide easy decorators to ensure (or enforce) a valid libzfs handle has been created (and will not be reclaimed
+    until a certain section has been completed.)
     """
 
     _global_ptr = None
@@ -41,6 +48,10 @@ class LibZFSHandle(object):
 
     @classmethod
     def requires_refcount(cls, func):
+        """
+        The ``requires_refcount`` decorator adds a check prior to call ``func`` to verify
+        that there is an active handle. if there is no such handle, a ``NoHandleException`` exception is thrown.
+        """
         @functools.wraps(func)
         def requires_active_handle(*args, **kwargs):
             if cls.refcount() == 0:
@@ -50,6 +61,14 @@ class LibZFSHandle(object):
 
     @classmethod
     def auto(cls, func):
+        """
+        The ``auto`` decorator wraps ``func`` in a context manager so that a handle is obtained.
+
+        .. note::
+           Please note, that most functions require the handle to continue being alive for future calls to data
+           retrieved from the function. In such cases, it's advisable to use the `requires_refcount` decorator, and
+           force the program using the library with obtaining a handle (and keeping it active.)
+        """
         @functools.wraps(func)
         def auto_claim_handle(*args, **kwargs):
             with cls():
@@ -58,12 +77,28 @@ class LibZFSHandle(object):
 
     @classmethod
     def refcount(cls):
+        """
+        This function returns the amount of active references for the current global libzfs handle.
+
+        .. note::
+           If this function returns 0, no current handle is obtained
+        """
         return cls._count
 
     @classmethod
     def init(cls):
+        """
+        Requests the current global libzfs handle (or creates one if no handle is active)
+
+        .. note::
+           This function increases the refcount by one as such it is needed that :py:func:`LibZFSHandle.fini` is
+           called when the process is completed to reduce the refcount, and allow for cleanup.
+        """
         return LibZFSHandle._add_ref()
 
     @classmethod
     def fini(cls):
+        """
+        This function reduces the refcount by one, and performs cleanup when no more references are active.
+        """
         LibZFSHandle._del_ref()
