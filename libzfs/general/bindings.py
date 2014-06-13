@@ -1,4 +1,4 @@
-from libzfs.bindings import manager
+from ..bindings import manager
 general_ffi = manager.general_ffi
 
 
