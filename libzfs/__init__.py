@@ -5,7 +5,7 @@ VERSION = __version__
 try:
     from ._zfsversion import libzfs_version
 except ImportError:
-    from libzfs.utils.version import detect_libzfs_version
+    from .utils.version import detect_libzfs_version
     # We default back to the latest libzfs version
     libzfs_version = detect_libzfs_version()
 
