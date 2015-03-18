@@ -202,7 +202,10 @@ class BindingManager(object):
             for part in data.split(','):
                 if '=' in part:
                     part = part[:part.index('=')]
-                items.append(part.strip())
+                part = part.strip()
+                if not part:
+                    continue
+                items.append(part)
             self._enums[name] = items
         return line
 
@@ -402,7 +405,7 @@ class BindingManager(object):
             return defines[key]
         if key in self.enums:
             keys = self.enums[key]
-            return IntEnum(key, [[x, getattr(libzfs, x, 0)] for x in keys])
+            return IntEnum(key, [[x, getattr(libzfs, x, 0)] for x in keys if x])
         if hasattr(libzfs, key):
             val = getattr(libzfs, key)
             if isinstance(val, six.string_types + six.integer_types):
