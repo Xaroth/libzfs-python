@@ -1,5 +1,6 @@
 import copy
 from cffi import FFI
+from enum import IntEnum
 import json
 import operator
 import os
@@ -141,6 +142,9 @@ class BindingManager(object):
         'zpool',
     ]
 
+    TYPEDEF_ENUM = 'typedef enum'
+    TYPEDEF_ENUM_LEN = len(TYPEDEF_ENUM)
+
     DEFAULT_OUTPUT = join(CURRENT_DIR, 'bindings', 'output')
 
     def __init__(self, parameters=None):
@@ -151,6 +155,7 @@ class BindingManager(object):
         self._libzfs = None
         self._defines = {}
         self._undefines = []
+        self._enums = {}
 
     def _merge_with_environ(self, defaults, environ_name, params_name):
         base = defaults[:]
@@ -186,6 +191,19 @@ class BindingManager(object):
     def process_enum_line(self, line):
         while RX_SHIFT.search(line):
             line = RX_SHIFT.sub(shift_replace, line, 1)
+        if line.startswith(self.TYPEDEF_ENUM):
+            # We now know absolutely sure it's an enum
+            data, name = line.rsplit('}', 1)
+            prefix, data = data.split('{', 1)
+
+            name = name.rstrip(';').strip()
+            prefix = prefix.strip()
+            items = []
+            for part in data.split(','):
+                if '=' in part:
+                    part = part[:part.index('=')]
+                items.append(part.strip())
+            self._enums[name] = items
         return line
 
     def process_define_line(self, line):
@@ -249,6 +267,7 @@ class BindingManager(object):
     def build_headers(self):
         self._defines = {}
         self._undefines = []
+        self._enums = {}
         build_source = six.binary_type(self.parameters.get('build_source', self.DEFAULT_SOURCE))
         process = subprocess.Popen(self.build_compile_command(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, _ = process.communicate(build_source)
@@ -300,21 +319,26 @@ class BindingManager(object):
     def build(self):
         headers = self.build_headers()
         defines = dict(self.build_defines())
+        enums = self._enums
 
         output_dir = os.environ.get('LIBZFS_OUTPUT', self.DEFAULT_OUTPUT)
         headers_path = join(output_dir, 'headers.h')
         defines_path = join(output_dir, 'defines.json')
+        enums_path = join(output_dir, 'enums.json')
 
         with open(defines_path, 'w') as fh:
             json.dump(defines, fh, sort_keys=True, indent=4 if os.environ.get('LIBZFS_SANE_JSON') else 0)
+        with open(enums_path, 'w') as fh:
+            json.dump(self._enums, fh, sort_keys=True, indent=4 if os.environ.get('LIBZFS_SANE_JSON') else 0)
         with open(headers_path, 'w') as fh:
             fh.write(headers)
-        return headers, defines
+        return headers, defines, enums
 
-    def compile(self, headers=None, defines=None):
+    def compile(self, headers=None, defines=None, enums=None):
         output_dir = os.environ.get('LIBZFS_OUTPUT', self.DEFAULT_OUTPUT)
         headers_path = join(output_dir, 'headers.h')
         defines_path = join(output_dir, 'defines.json')
+        enums_path = join(output_dir, 'enums.json')
 
         if not headers and exists(headers_path):
             with open(headers_path, 'r') as fh:
@@ -322,20 +346,24 @@ class BindingManager(object):
         if not defines and exists(defines_path):
             with open(defines_path, 'r') as fh:
                 defines = json.load(fh)
+        if not enums and exists(enums_path):
+            with open(enums_path, 'r') as fh:
+                enums = json.load(fh)
 
-        if not headers or not defines or os.environ.get('LIBZFS_REGENERATE') or \
-           self.parameters.get('regenerate'):
-            headers, defines = self.build()
+        regenerate = os.environ.get('LIBZFS_REGENERATE') or self.parameters.get('regenerate')
+
+        if not headers or not defines or not enums or regenerate:
+            headers, defines, enums = self.build()
 
         ffi = FFI()
         ffi.cdef(headers, override=True)
-        return ffi, defines
+        return ffi, defines, enums
 
     @property
     def ffi(self):
         if self._ffi:
             return self._ffi
-        self._ffi, self._defines = self.compile()
+        self._ffi, self._defines, self._enums = self.compile()
         return self._ffi
 
     @property
@@ -356,8 +384,15 @@ class BindingManager(object):
     def defines(self):
         if self._defines:
             return self._defines
-        self._ffi, self._defines = self.compile()
+        self._ffi, self._defines, self._enums = self.compile()
         return self._defines
+
+    @property
+    def enums(self):
+        if self._enums:
+            return self._enums
+        self._ffi, self._defines, self._enums = self.compile()
+        return self._enums
 
     def __getitem__(self, key):
         defines = self.defines
@@ -365,6 +400,9 @@ class BindingManager(object):
 
         if key in defines:
             return defines[key]
+        if key in self.enums:
+            keys = self.enums[key]
+            return IntEnum(key, [[x, getattr(libzfs, x, 0)] for x in keys])
         if hasattr(libzfs, key):
             val = getattr(libzfs, key)
             if isinstance(val, six.string_types + six.integer_types):
