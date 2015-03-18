@@ -255,7 +255,7 @@ class BindingManager(object):
             if func_match and 'inline' in func_match.group(1):
                 continue
             # Check if we're dealing with an enum line
-            if '=' in line and '==' not in line:
+            if line.startswith(self.TYPEDEF_ENUM):
                 line = self.process_enum_line(line)
             # Check if we have an array def in this line
             if '[' in line and ']' in line:
