@@ -159,15 +159,15 @@ class NVList(NVPairMixIn):
         return default
 
     def _iter_nvlist(self, skip_unknown=False):
-        pair = libzfs.nvlist_next_nvpair(self.ptr, libzfs.NULL)
-        while pair != libzfs.NULL:
+        pair = libzfs.nvlist_next_nvpair(self.ptr, ffi.NULL)
+        while pair != ffi.NULL:
             key = ffi.string(libzfs.nvpair_name(pair))
             typeid = libzfs.nvpair_type(pair)
             data_type = data_type_t_safe(typeid)
             info = self._detect_type(data_type, default=None)
             if (data_type and info) or skip_unknown is False:
                 yield pair, key, typeid, data_type, info
-            pair = libzfs.nvlist_next_nvpair(self.ptr, libzfs.NULL)
+            pair = libzfs.nvlist_next_nvpair(self.ptr, pair)
 
     def items(self, skip_unknown=False, deep=20, extended=False):
         def y(k, t, v):
