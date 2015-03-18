@@ -16,6 +16,7 @@ CURRENT_DIR = dirname(abspath(__file__))
 # }
 # etc etc. also supports the usage of letters ('Z' << 2), or addition.
 RX_SHIFT = re.compile(r'(\(?(?:[0-9A-Fx]+|\'\w+\')\)?)\s*((?:<<)|(?:>>)|(?:\|)|(?:\+)|(?:\-))\s*(\(?[0-9A-Fx]+\)?)')
+RX_SHIFT_COMPLEX = re.compile(r'(\(?(?:[0-9A-FxUL]+|[\w\'\"]+)\)?)\s*((?:<<)|(?:>>)|(?:\|)|(?:\+)|(?:\-))\s*(\(?(?:[0-9A-FxUL]+|[\w\'\"]+)\)?)')
 # Array dimensioning containing simple math
 # i.e. char *test[6+1]
 AR_DIM = re.compile(r'(\d+)\s*((?:<<)|(?:>>)|(?:\|)|(?:\+)|(?:\-))\s*(\d+)')
@@ -28,7 +29,7 @@ OPERATORS = {
     '-': operator.sub,
 }
 
-IS_INTEGER_VALUE = re.compile(r'^([0-9A-F.ex\-LU].*)$')
+IS_INTEGER_VALUE = re.compile(r'^([0-9A-F.eEx\+\-LU]+)$')
 
 
 def _to_int(x):
@@ -40,12 +41,14 @@ def _to_int(x):
 
 def shift_replace(m):
     left, shift, right = m.group(1).lstrip('('), m.group(2), m.group(3).rstrip(')')
-    if "'" in left or '"' in left:
-        left = ord(left.strip('\'"'))
+    left = left.strip()
+    right = right.strip()
+    if left[0] == left[-1] and left[0] in ("'", '"'):
+        left = ord(left[1:-1])
     else:
         left = _to_int(left)
-    if "'" in right or '"' in right:
-        right = ord(right.strip('\'"'))
+    if right[0] == right[-1] and right[0] in ("'", '"'):
+        right = ord(right[1:-1])
     else:
         right = _to_int(right)
 
@@ -54,6 +57,39 @@ def shift_replace(m):
     if not op:
         return KeyError(shift)
     return str(op(left, right))
+
+
+def shift_replace_complex(items):
+    def _inner(m):
+        left, shift, right = m.group(1).lstrip('('), m.group(2), m.group(3).rstrip(')')
+        left = left.strip()
+        right = right.strip()
+        shift = shift.strip()
+        if left[0] == left[-1] and left[0] in ("'", '"'):
+            left = ord(left[1:-1])
+        else:
+            if IS_INTEGER_VALUE.match(left):
+                left = _to_int(left.rstrip('UL'))
+            elif left in items:
+                left = items[left]
+                return str('(%s %s %s)' % (left, shift, right))
+            else:
+                return ''
+        if right[0] == right[-1] and right[0] in ("'", '"'):
+            right = ord(right[1:-1])
+        else:
+            if IS_INTEGER_VALUE.match(right):
+                right = _to_int(right.rstrip('UL'))
+            elif right in items:
+                right = items[right]
+                return str('(%s %s %s)' % (left, shift, right))
+            else:
+                return ''
+        op = OPERATORS.get(shift)
+        if not op:
+            return KeyError(shift)
+        return str(op(left, right))
+    return _inner
 
 # Simple regex to locate function definitions
 FUNCTION_REGEX = re.compile(r'(.*)\s([\w*]+)\(')
@@ -147,7 +183,7 @@ class BindingManager(object):
 
     def process_enum_line(self, line):
         while RX_SHIFT.search(line):
-            line = RX_SHIFT.sub(shift_replace, line)
+            line = RX_SHIFT.sub(shift_replace, line, 1)
         return line
 
     def process_define_line(self, line):
@@ -160,7 +196,7 @@ class BindingManager(object):
 
     def process_array_line(self, line):
         while AR_DIM.search(line):
-            line = AR_DIM.sub(shift_replace, line)
+            line = AR_DIM.sub(shift_replace, line, 1)
         return line
 
     def process_headers(self, output):
@@ -219,30 +255,56 @@ class BindingManager(object):
         items = copy.copy(self._defines)
 
         def _get(x):
-            if x in items and items[x] != x:
-                return _get(items[x])
-            if IS_INTEGER_VALUE.match(x):
-                y = x.rstrip('UL')
+            y = x
+            if x[0] == '(' and x[-1] == ')':
+                x = x[1:-1]
+            if x in items:
+                found = items[x]
+                if found != x:
+                    return _get(found)
+            if not x.startswith('__'):
+                x = '__%s__' % x
+                magic = _get(x)
+                if magic != x:
+                    return magic
+            return y
+        processed_defines = {key: _get(value) for key, value in self._defines.items()}
+
+        for key, value in processed_defines.items():
+            if IS_INTEGER_VALUE.match(value):
+                val = value.rstrip('UL')
                 try:
-                    return _to_int(y)
+                    value = _to_int(val)
                 except ValueError:
                     try:
-                        return float(y)
+                        value = float(val)
                     except:
-                        return x
-            return x
-        return {key: _get(value) for key, value in self._defines.items()}
+                        continue
+                yield key, value
+            elif len(value) > 1 and value[0] == value[-1] and value[0] in ("'", '"'):
+                yield key, value[1:-1]
+            elif RX_SHIFT_COMPLEX.search(value):
+                # This is probably a complex variable.
+                replacer = shift_replace_complex(processed_defines)
+                while RX_SHIFT_COMPLEX.search(value):
+                    value = RX_SHIFT_COMPLEX.sub(replacer, value, 1)
+                if value:
+                    yield key, value
+            else:
+                yield key, ["unknown", value]
+                # This is most likely a complex value or macro, so we ignore these (for now)
+                pass
 
     def build(self):
         headers = self.build_headers()
-        defines = self.build_defines()
+        defines = dict(self.build_defines())
 
         output_dir = os.environ.get('LIBZFS_OUTPUT', self.DEFAULT_OUTPUT)
         headers_path = join(output_dir, 'headers.h')
         defines_path = join(output_dir, 'defines.json')
 
         with open(defines_path, 'w') as fh:
-            json.dump(defines, fh)
+            json.dump(defines, fh, sort_keys=True, indent=4 if os.environ.get('LIBZFS_SANE_JSON') else 0)
         with open(headers_path, 'w') as fh:
             fh.write(headers)
         return headers, defines
@@ -284,7 +346,6 @@ class BindingManager(object):
                                             'LIBZFS_EXTRA_VERIFY_INCLUDE_DIRS',
                                             'verify_include_dirs')
         macros = self.get_defined_params()
-        print verify, libraries, includes, macros
         ffi = self.ffi
         self._libzfs = ffi.verify(verify, define_macros=macros, include_dirs=includes, libraries=libraries)
         return self._libzfs
@@ -294,6 +355,18 @@ class BindingManager(object):
         if self._defines:
             return self._defines
         self._ffi, self._defines = self.compile()
-        return self._ffi
+        return self._defines
+
+    def __getitem__(self, key):
+        defines = self.defines
+        libzfs = self.libzfs
+
+        if key in defines:
+            return defines[key]
+        if hasattr(libzfs, key):
+            val = getattr(libzfs, key)
+            if isinstance(val, (int, basestring)):
+                return val
+        raise KeyError(key)
 
 default_manager = BindingManager()
