@@ -7,6 +7,13 @@ NV_UNIQUE_NAME_TYPE = bindings['NV_UNIQUE_NAME_TYPE']
 
 data_type_t = bindings['data_type_t']
 
+
+def data_type_t_safe(id):
+    try:
+        return data_type_t(id)
+    except ValueError:
+        return None
+
 ffi = bindings.ffi
 libzfs = bindings.libzfs
 
@@ -20,10 +27,12 @@ class UnknownDataType(Exception):
 
 class NVPairMixIn(object):
     @classmethod
-    def _detect_type(cls, data_type):
+    def _detect_type(cls, data_type, default=NO_DEFAULT):
         info = NVLIST_HANDLERS.get(data_type)
-        if not info:
+        if not info and default is NO_DEFAULT:
             raise UnknownDataType("Unknown data type: %r" % data_type)
+        elif not info:
+            info = default
         return info
 
     @classmethod
@@ -91,41 +100,44 @@ class NVList(NVPairMixIn):
         info = self._detect_type(data_type)
 
         holder = info.new()
-        val = info.nvlist_lookup(self.ptr, key, holder)
+        countholder = None
+        if info.is_array:
+            countholder = ffi.new(HOLDER_TYPE)
+            val = info.nvlist_lookup(self.ptr, key, holder, countholder)
+        else:
+            val = info.nvlist_lookup(self.ptr, key, holder)
         if not bool(val):
-            return info.to_python()
+            return info.to_python(holder, countholder)
         elif default is not NO_DEFAULT:
             return default
         raise KeyError(key)
 
-    def lookup_type(self, key):
+    def _lookup_type(self, key, default=NO_DEFAULT):
         holder = ffi.new('nvpair_t **')
         val = libzfs.nvlist_lookup_nvpair(self.ptr, key, holder)
         if bool(val):
             raise KeyError(key)
         typeid = libzfs.nvpair_type(holder[0])
-        try:
-            data_type = data_type_t(typeid)
-        except ValueError:
+        data_type = data_type_t_safe(typeid)
+        if data_type is None and default is NO_DEFAULT:
             raise UnknownDataType("Unknown data id: %r" % typeid)
+        elif data_type is None:
+            data_type = default
+        return data_type, typeid, holder
+
+    def lookup_type(self, key):
+        data_type, typeid, holder = self._lookup_type(key)
         return data_type
 
     def exists(self, key):
-        try:
-            return self.lookup_type(key)
-        except (KeyError, UnknownDataType):
-            return False
+        return self._lookup_type(key, default=False)
 
     def lookup_smart(self, key, default=NO_DEFAULT):
-        holder = ffi.new('nvpair_t **')
-        val = libzfs.nvlist_lookup_nvpair(self.ptr, key, holder)
-        data_type = None
-        if not bool(val):
-            typeid = libzfs.nvpair_type(holder[0])
-            try:
-                data_type = data_type_t(typeid)
-            except ValueError:
-                pass
+        data_type = holder = None
+        try:
+            data_type, typeid, holder = self._lookup_type(key)
+        except:
+            pass
 
         if not data_type:
             if default is NO_DEFAULT:
@@ -146,26 +158,25 @@ class NVList(NVPairMixIn):
             raise KeyError(key)
         return default
 
+    def _iter_nvlist(self, skip_unknown=False):
+        pair = libzfs.nvlist_next_nvpair(self.ptr, libzfs.NULL)
+        while pair != libzfs.NULL:
+            key = ffi.string(libzfs.nvpair_name(pair))
+            typeid = libzfs.nvpair_type(pair)
+            data_type = data_type_t_safe(typeid)
+            info = self._detect_type(data_type, default=None)
+            if (data_type and info) or skip_unknown is False:
+                yield pair, key, typeid, data_type, info
+            pair = libzfs.nvlist_next_nvpair(self.ptr, libzfs.NULL)
+
     def items(self, skip_unknown=False, deep=20, extended=False):
         def y(k, t, v):
             if extended:
                 return (k, t, v)
             return (k, v)
-        pair = libzfs.nvlist_next_nvpair(self.ptr, libzfs.NULL)
-        while pair != libzfs.NULL:
-            key = ffi.string(libzfs.nvpair_name(pair))
-            typeid = libzfs.nvpair_type(pair)
-            try:
-                data_type = data_type_t(typeid)
-                info = self._detect_type(data_type)
-            except (ValueError, UnknownDataType):
-                if skip_unknown:
-                    pair = libzfs.nvlist_next_nvpair(self.ptr, pair)
-                    continue
-                try:
-                    data_type = data_type_t(typeid)
-                except ValueError:
-                    data_type = None
+
+        for pair, key, typeid, data_type, info in self._iter_nvlist():
+            if data_type is None or info is None:
                 yield y(key, data_type, None)
             valholder = info.new()
             countholder = None
@@ -274,7 +285,7 @@ NVLIST_HANDLERS = {
     data_type_t.DATA_TYPE_INT64:        NVListHandler('int64', 'int64_t *', _to_int, None),
     data_type_t.DATA_TYPE_UINT64:       NVListHandler('uint64', 'uint64_t *', _to_int, None),
     data_type_t.DATA_TYPE_STRING:       NVListHandler('string', 'char **', lambda x: ffi.string(x[0]), None),
-    data_type_t.DATA_TYPE_NVLIST:       NVListHandler('nvlist', 'nvlist_t **', NVList.from_nvlist_handle, False),
+    data_type_t.DATA_TYPE_NVLIST:       NVListHandler('nvlist', 'nvlist_t **', NVList.from_nvlist_hdl, False),
 
     data_type_t.DATA_TYPE_BYTE_ARRAY:   NVListHandler('byte_array', 'uchar_t **', _array_converter(_to_int), None),
     data_type_t.DATA_TYPE_INT8_ARRAY:   NVListHandler('int8_array', 'int8_t **', _array_converter(_to_int), False, True),
