@@ -1,11 +1,18 @@
-from .bindings import manager, enums
-from .handle import LibZFSHandle
-from .general import boolean_t
-
+from . import bindings
 from .nvpair import NVList
+from .handle import LibZFSHandle
+from .utils.conversion import boolean_t
+from .utils import six
 
-c_libzfs = manager.libzfs
-ffi_libzfs = manager.libzfs_ffi
+libzfs = bindings.libzfs
+ffi = bindings.ffi
+
+pool_state_t = bindings['pool_state_t']
+zpool_errata_t = bindings['zpool_errata_t']
+zpool_prop_t = bindings['zpool_prop_t']
+zpool_status_t = bindings['zpool_status_t']
+zprop_source_t = bindings['zprop_source_t']
+ZPOOL_MAXNAMELEN = bindings['ZPOOL_MAXNAMELEN']
 
 
 class ZPoolProperties(object):
@@ -14,41 +21,46 @@ class ZPoolProperties(object):
 
     @LibZFSHandle.requires_refcount
     def items(self):
+        # We add another claim to the handle, to ensure that it remains open during the length of this generator
         with LibZFSHandle():
-            #
-            # We add another claim to the handle, to ensure that it remains open during the length of this generator
-            for i in range(enums.zpool_prop.NUM_PROPS):
-                value, source = self._get_prop(i)
-                yield enums.zpool_prop(i), value
+            for prop in zpool_prop_t:
+                if prop >= zpool_prop_t.ZPOOL_NUM_PROPS:
+                    continue
+                value, source = self._get_prop(prop)
+                yield prop, value
 
     @LibZFSHandle.requires_refcount
     def sources(self):
+        # We add another claim to the handle, to ensure that it remains open during the length of this generator
         with LibZFSHandle():
-            #
-            # We add another claim to the handle, to ensure that it remains open during the length of this generator
-            for i in range(enums.zpool_prop.NUM_PROPS):
-                value, source = self._get_prop(i)
-                yield enums.zpool_prop(i), source
+            for prop in zpool_prop_t:
+                if prop >= zpool_prop_t.ZPOOL_NUM_PROPS:
+                    continue
+                value, source = self._get_prop(prop)
+                yield prop, source
 
     @LibZFSHandle.requires_refcount
     def _get_prop(self, key, literal = True):
-        holder = ffi_libzfs.new('char [%s]' % enums.ZPOOL_MAXNAMELEN)
-        sourceholder = ffi_libzfs.new('zprop_source_t *')
+        holder = ffi.new('char [%s]' % ZPOOL_MAXNAMELEN)
+        sourceholder = ffi.new('zprop_source_t *')
         literal = boolean_t(literal)
 
-        val = c_libzfs.zpool_get_prop_literal(self._pool._handle, int(key), holder,
-            enums.ZPOOL_MAXNAMELEN, sourceholder, literal)
+        val = libzfs.zpool_get_prop_literal(self._pool._handle, int(key), holder,
+                                            ZPOOL_MAXNAMELEN, sourceholder, literal)
         if not bool(val):
-            value = ffi_libzfs.string(holder)
-            source = enums.zprop_source(sourceholder[0])
+            value = ffi.string(holder)
+            source = zprop_source_t(sourceholder[0])
             return value, source
         return None, None
 
     def __getitem__(self, key):
-        key = enums.zpool_prop(key)
+        try:
+            key = zpool_prop_t(key)
+        except ValueError:
+            raise KeyError(key)
         value, source = self._get_prop(key)
         if value is None:
-            return KeyError(key)
+            raise KeyError(key)
         return value
 
     def __setitem__(self, key, value):
@@ -76,29 +88,29 @@ class ZPool(object):
     @property
     def name(self):
         if self._name is None:
-            self._name = ffi_libzfs.string(c_libzfs.zpool_get_name(self.hdl))
+            self._name = ffi.string(libzfs.zpool_get_name(self.hdl))
         return self._name
 
     @property
     def state(self):
         if self._state is None:
-            state = c_libzfs.zpool_get_state(self.hdl)
-            self._state = enums.pool_state(state)
+            state = libzfs.zpool_get_state(self.hdl)
+            self._state = pool_state_t(state)
         return self._state
 
     def _get_status(self):
         if self._status is None:
-            msgid = ffi_libzfs.new('char **')
-            errata = ffi_libzfs.new('zpool_errata_t *')
+            msgid = ffi.new('char **')
+            errata = ffi.new('zpool_errata_t *')
 
-            reason = c_libzfs.zpool_get_status(self.hdl, msgid, errata)
+            reason = libzfs.zpool_get_status(self.hdl, msgid, errata)
 
-            self._status = enums.zpool_status(reason)
-            if msgid[0] == ffi_libzfs.NULL:
+            self._status = zpool_status_t(reason)
+            if msgid[0] == ffi.NULL:
                 self._status_extra = ''
             else:
-                self._status_extra = ffi_libzfs.string(msgid[0])
-            self._errata = enums.zpool_errata(errata[0])
+                self._status_extra = ffi.string(msgid[0])
+            self._errata = zpool_errata_t(errata[0])
 
     @property
     def status_extra(self):
@@ -118,10 +130,10 @@ class ZPool(object):
     @property
     def config(self):
         if self._config is None:
-            config = c_libzfs.zpool_get_config(self.hdl, ffi_libzfs.new_handle(None))
+            config = libzfs.zpool_get_config(self.hdl, ffi.new_handle(None))
             config_list = NVList.from_nvlist_ptr(config, free=False)
             with config_list:
-                self._config = config_list.to_dict(skip_unknown = True)
+                self._config = dict(config_list.items(skip_unknown = True))
         return self._config
 
     def __repr__(self):
@@ -131,13 +143,13 @@ class ZPool(object):
     def list(cls):
         pools = []
 
-        @ffi_libzfs.callback('zpool_iter_f')
+        @ffi.callback('zpool_iter_f')
         def _callback(handle, arg=None):
             zpool = ZPool(handle)
             pools.append(zpool)
             return 0
 
         with LibZFSHandle() as hdl:
-            c_libzfs.zpool_iter(hdl, _callback, ffi_libzfs.new_handle(None))
+            libzfs.zpool_iter(hdl, _callback, ffi.new_handle(None))
 
         return pools
