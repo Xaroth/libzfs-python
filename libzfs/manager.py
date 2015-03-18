@@ -7,6 +7,8 @@ from os.path import join, dirname, abspath, exists
 import re
 import subprocess
 
+from .utils import six
+
 CURRENT_DIR = dirname(abspath(__file__))
 
 # Shift values for enums, a-la:
@@ -247,8 +249,9 @@ class BindingManager(object):
     def build_headers(self):
         self._defines = {}
         self._undefines = []
+        build_source = six.binary_type(self.parameters.get('build_source', self.DEFAULT_SOURCE))
         process = subprocess.Popen(self.build_compile_command(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        stdout, _ = process.communicate(self.parameters.get('build_source', self.DEFAULT_SOURCE))
+        stdout, _ = process.communicate(build_source)
         return '\n'.join(self.process_headers(stdout))
 
     def build_defines(self):
@@ -268,9 +271,9 @@ class BindingManager(object):
                 if magic != x:
                     return magic
             return y
-        processed_defines = {key: _get(value) for key, value in self._defines.items()}
+        processed_defines = {key: _get(value) for key, value in six.iteritems(self._defines)}
 
-        for key, value in processed_defines.items():
+        for key, value in six.iteritems(processed_defines):
             if IS_INTEGER_VALUE.match(value):
                 val = value.rstrip('UL')
                 try:
@@ -339,7 +342,7 @@ class BindingManager(object):
     def libzfs(self):
         if self._libzfs:
             return self._libzfs
-        verify = self.parameters.get('verify_source', self.DEFAULT_VERIFY)
+        verify = six.binary_type(self.parameters.get('verify_source', self.DEFAULT_VERIFY))
         libraries = self._merge_with_environ(self.DEFAULT_LIBRARIES, 'LIBZFS_LIBRARIES', 'libraries')
         includes = self._merge_with_environ(self.DEFAULT_VERIFY_INCLUDE_DIRS,
                                             'LIBZFS_EXTRA_VERIFY_INCLUDE_DIRS',
@@ -364,7 +367,7 @@ class BindingManager(object):
             return defines[key]
         if hasattr(libzfs, key):
             val = getattr(libzfs, key)
-            if isinstance(val, (int, basestring)):
+            if isinstance(val, six.string_types + six.integer_types):
                 return val
         raise KeyError(key)
 
