@@ -1,6 +1,6 @@
 import unittest
 
-from libzfs import LibZFSHandle
+from libzfs.handle import LibZFSHandle
 
 
 class Test_LibZFSHandle(unittest.TestCase):
