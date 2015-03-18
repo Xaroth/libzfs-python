@@ -327,9 +327,9 @@ class BindingManager(object):
         enums_path = join(output_dir, 'enums.json')
 
         with open(defines_path, 'w') as fh:
-            json.dump(defines, fh, sort_keys=True, indent=4 if os.environ.get('LIBZFS_SANE_JSON') else 0)
+            json.dump(defines, fh, sort_keys=True, indent=4 if os.environ.get('LIBZFS_SANE_JSON') else None)
         with open(enums_path, 'w') as fh:
-            json.dump(self._enums, fh, sort_keys=True, indent=4 if os.environ.get('LIBZFS_SANE_JSON') else 0)
+            json.dump(self._enums, fh, sort_keys=True, indent=4 if os.environ.get('LIBZFS_SANE_JSON') else None)
         with open(headers_path, 'w') as fh:
             fh.write(headers)
         return headers, defines, enums
