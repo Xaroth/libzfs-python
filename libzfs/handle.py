@@ -1,8 +1,5 @@
-from .bindings import manager
+from . import bindings
 import functools
-
-c_libzfs = manager.libzfs
-ffi_libzfs = manager.libzfs_ffi
 
 
 class NoHandleException(Exception):
@@ -29,7 +26,7 @@ class LibZFSHandle(object):
     def _add_ref(cls):
         cls._count += 1
         if cls._global_ptr is None:
-            cls._global_ptr = c_libzfs.libzfs_init()
+            cls._global_ptr = bindings.libzfs.libzfs_init()
         return cls._global_ptr
 
     @classmethod
@@ -37,7 +34,7 @@ class LibZFSHandle(object):
         cls._count -= 1
         if cls._count < 1 and cls._global_ptr is not None:
             cls._count = 0
-            c_libzfs.libzfs_fini(cls._global_ptr)
+            bindings.libzfs.libzfs_fini(cls._global_ptr)
             cls._global_ptr = None
 
     def __enter__(self):
