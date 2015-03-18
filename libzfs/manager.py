@@ -291,7 +291,6 @@ class BindingManager(object):
                 if value:
                     yield key, value
             else:
-                yield key, ["unknown", value]
                 # This is most likely a complex value or macro, so we ignore these (for now)
                 pass
 
