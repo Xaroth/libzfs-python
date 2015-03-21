@@ -130,7 +130,7 @@ class ZPool(object):
     @property
     def config(self):
         if self._config is None:
-            config = libzfs.zpool_get_config(self.hdl, ffi.new_handle(None))
+            config = libzfs.zpool_get_config(self.hdl, ffi.NULL)
             config_list = NVList.from_nvlist_ptr(config, free=False)
             with config_list:
                 self._config = dict(config_list.items(skip_unknown = True))
@@ -150,6 +150,6 @@ class ZPool(object):
             return 0
 
         with LibZFSHandle() as hdl:
-            libzfs.zpool_iter(hdl, _callback, ffi.new_handle(None))
+            libzfs.zpool_iter(hdl, _callback, ffi.NULL)
 
         return pools
