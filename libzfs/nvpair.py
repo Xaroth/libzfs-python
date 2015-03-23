@@ -21,6 +21,31 @@ NO_DEFAULT = object()
 HOLDER_TYPE = 'uint_t *'
 
 
+def _split_dict(base, keys_to_split):
+    a, b = {}, {}
+    for key, value in base.items():
+        (b if key in keys_to_split else a)[key] = value
+    return a, b
+
+
+def nvlist_to_dict(nvlist, **kwargs):
+    kwargs.setdefault('skip_unknown', True)
+    with nvlist:
+        return dict(nvlist.items(**kwargs))
+
+
+def ptr_to_dict(ptr, **kwargs):
+    dict_kwargs, nvlist_kwargs = _split_dict(kwargs, ['free', 'alloc', 'flags'])
+    nvlist = NVList.from_nvlist_ptr(ptr, **nvlist_kwargs)
+    return nvlist_to_dict(nvlist, **dict_kwargs)
+
+
+def hdl_to_dict(hdl, **kwargs):
+    dict_kwargs, nvlist_kwargs = _split_dict(kwargs, ['free', 'alloc', 'flags'])
+    nvlist = NVList.from_nvlist_hdl(hdl, **nvlist_kwargs)
+    return nvlist_to_dict(nvlist, **dict_kwargs)
+
+
 class UnknownDataType(Exception):
     pass
 
