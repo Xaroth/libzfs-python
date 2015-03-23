@@ -1,8 +1,7 @@
 from . import bindings
-from .nvpair import NVList
+from .nvpair import ptr_to_dict
 from .handle import LibZFSHandle
 from .utils.conversion import boolean_t
-from .utils import six
 
 libzfs = bindings.libzfs
 ffi = bindings.ffi
@@ -133,9 +132,7 @@ class ZPool(object):
     def config(self):
         if self._config is None:
             config = libzfs.zpool_get_config(self.hdl, ffi.NULL)
-            config_list = NVList.from_nvlist_ptr(config, free=False)
-            with config_list:
-                self._config = dict(config_list.items(skip_unknown=True))
+            self._config = ptr_to_dict(config, free=False)
         return self._config
 
     @property
@@ -148,9 +145,7 @@ class ZPool(object):
             return dict()
         if self._old_config is None:
             old_config = libzfs.zpool_get_old_config(self.hdl)
-            old_config_list = NVList.from_nvlist_ptr(old_config, free=False)
-            with old_config_list:
-                self._old_config = dict(old_config_list.items(skip_unknown=True))
+            self._old_config = ptr_to_dict(old_config, free=False)
         return self._old_config
 
     @LibZFSHandle.requires_refcount
