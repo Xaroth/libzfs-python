@@ -72,6 +72,8 @@ class ZPool(object):
     _name = None
     _state = None
     _config = None
+    _old_config = None
+    _refreshed = False
 
     _status = None
     _status_extra = None
@@ -133,8 +135,38 @@ class ZPool(object):
             config = libzfs.zpool_get_config(self.hdl, ffi.NULL)
             config_list = NVList.from_nvlist_ptr(config, free=False)
             with config_list:
-                self._config = dict(config_list.items(skip_unknown = True))
+                self._config = dict(config_list.items(skip_unknown=True))
         return self._config
+
+    @property
+    def old_config(self):
+        if self._refreshed is False:
+            # Judging by zfs/cmd/zpool/zpool_main.c, we should ignore the 'old config'
+            #  the first time we refresh the iostats.
+            # The internals (zfs/lib/libzfs/libzfs_config.c) should probably clarify more
+            #  on why.. for now we'll mimic what we see.
+            return dict()
+        if self._old_config is None:
+            old_config = libzfs.zpool_get_old_config(self.hdl)
+            old_config_list = NVList.from_nvlist_ptr(old_config, free=False)
+            with old_config_list:
+                self._old_config = dict(old_config_list.items(skip_unknown=True))
+        return self._old_config
+
+    @LibZFSHandle.requires_refcount
+    def refresh_stats(self):
+        missing = ffi.new("boolean_t *")
+        success = libzfs.zpool_refresh_stats(self.hdl, missing) == 0
+
+        missing = bool(missing[0])
+
+        success = success and not missing
+        if success:
+            self._config = None
+            self._old_config = None
+            self._refreshed = True
+
+        return success
 
     def __repr__(self):
         return "<ZPool: %s: %s>" % (self.name, self.state.name)
