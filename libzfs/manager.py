@@ -11,6 +11,7 @@ import subprocess
 from .utils import six
 
 CURRENT_DIR = dirname(abspath(__file__))
+BINDINGS_DIR = join(CURRENT_DIR, 'bindings')
 
 # Shift values for enums, a-la:
 # {
@@ -126,16 +127,9 @@ class BindingManager(object):
         'zfs_prop_get_feature',     # Not implemented
     ]
 
-    DEFAULT_SOURCE = """
-#define __attribute__(x)
-#include <libzfs.h>
-"""
-    DEFAULT_VERIFY = """
-#include <libzfs.h>
-#include <libnvpair.h>
-#include <sys/fs/zfs.h>
-#include <sys/types.h>
-"""
+    DEFAULT_SOURCE = open(join(BINDINGS_DIR, 'source.c'), 'r').read()
+    DEFAULT_VERIFY = open(join(BINDINGS_DIR, 'verify.c'), 'r').read()
+    DEFAULT_HEADERS = open(join(BINDINGS_DIR, 'headers.h'), 'r').read()
     DEFAULT_LIBRARIES = [
         'zfs',
         'nvpair',
@@ -145,7 +139,7 @@ class BindingManager(object):
     TYPEDEF_ENUM = 'typedef enum'
     TYPEDEF_ENUM_LEN = len(TYPEDEF_ENUM)
 
-    DEFAULT_OUTPUT = join(CURRENT_DIR, 'bindings', 'output')
+    DEFAULT_OUTPUT = join(BINDINGS_DIR, 'output')
 
     def __init__(self, parameters=None):
         if parameters is None:
@@ -357,6 +351,8 @@ class BindingManager(object):
 
         if not headers or not defines or not enums or regenerate:
             headers, defines, enums = self.build()
+
+        headers += self.DEFAULT_HEADERS
 
         ffi = FFI()
         ffi.cdef(headers, override=True)
