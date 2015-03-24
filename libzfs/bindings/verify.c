@@ -12,7 +12,7 @@
  *  much does the same.
  */
 nvlist_t *zpool_get_old_config(zpool_handle_t *zhp) {
-    nvlist_t *oldconfig, *newconfig;
-    newconfig = zpool_get_config(zhp, &oldconfig);
+    nvlist_t *oldconfig;
+    zpool_get_config(zhp, &oldconfig);
     return (oldconfig);
 }
