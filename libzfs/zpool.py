@@ -31,8 +31,8 @@ class ZPool(object):
     _status_extra = None
     _errata = None
 
-    def __init__(self, handle):
-        self._hdl = handle
+    def __init__(self, hdl):
+        self._hdl = hdl
 
     def __del__(self):
         if hasattr(self, '_hdl'):
