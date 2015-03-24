@@ -170,6 +170,7 @@ class ZPool(object):
         return "<ZPool: %s: %s>" % (self.name, self.state.name)
 
     @classmethod
+    @LibZFSHandle.requires_refcount
     def list(cls):
         pools = []
 
@@ -185,6 +186,7 @@ class ZPool(object):
         return pools
 
     @classmethod
+    @LibZFSHandle.requires_refcount
     def get(cls, name=None, guid=None):
         if guid:
             guid = int(guid)
