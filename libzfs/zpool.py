@@ -9,64 +9,12 @@ ffi = bindings.ffi
 pool_state_t = bindings['pool_state_t']
 zpool_errata_t = bindings['zpool_errata_t']
 zpool_prop_t = bindings['zpool_prop_t']
+zprop_type_t = bindings['zprop_type_t']
 zpool_status_t = bindings['zpool_status_t']
 zprop_source_t = bindings['zprop_source_t']
 ZPOOL_MAXNAMELEN = bindings['ZPOOL_MAXNAMELEN']
 ZPOOL_CONFIG_POOL_NAME = bindings['ZPOOL_CONFIG_POOL_NAME']
 ZPOOL_CONFIG_POOL_GUID = bindings['ZPOOL_CONFIG_POOL_GUID']
-
-
-class ZPoolProperties(object):
-    def __init__(self, pool):
-        self._pool = pool
-
-    @LibZFSHandle.requires_refcount
-    def items(self):
-        # We add another claim to the handle, to ensure that it remains open during the length of this generator
-        with LibZFSHandle():
-            for prop in zpool_prop_t:
-                if prop >= zpool_prop_t.ZPOOL_NUM_PROPS:
-                    continue
-                value, source = self._get_prop(prop)
-                yield prop, value
-
-    @LibZFSHandle.requires_refcount
-    def sources(self):
-        # We add another claim to the handle, to ensure that it remains open during the length of this generator
-        with LibZFSHandle():
-            for prop in zpool_prop_t:
-                if prop >= zpool_prop_t.ZPOOL_NUM_PROPS:
-                    continue
-                value, source = self._get_prop(prop)
-                yield prop, source
-
-    @LibZFSHandle.requires_refcount
-    def _get_prop(self, key, literal = True):
-        holder = ffi.new('char [%s]' % ZPOOL_MAXNAMELEN)
-        sourceholder = ffi.new('zprop_source_t *')
-        literal = boolean_t(literal)
-
-        val = libzfs.zpool_get_prop_literal(self._pool._handle, int(key), holder,
-                                            ZPOOL_MAXNAMELEN, sourceholder, literal)
-        if not bool(val):
-            value = ffi.string(holder)
-            source = zprop_source_t(sourceholder[0])
-            return value, source
-        return None, None
-
-    def __getitem__(self, key):
-        try:
-            key = zpool_prop_t(key)
-        except ValueError:
-            raise KeyError(key)
-        value, source = self._get_prop(key)
-        if value is None:
-            raise KeyError(key)
-        return value
-
-    def __setitem__(self, key, value):
-        # TODO: writing properties
-        pass
 
 
 class ZPool(object):
@@ -76,17 +24,19 @@ class ZPool(object):
     _old_config = None
     _refreshed = False
 
+    _properties = None
+    _propertysources = None
+
     _status = None
     _status_extra = None
     _errata = None
 
     def __init__(self, handle):
-        self._handle = handle
-        self.properties = ZPoolProperties(self)
+        self._hdl = handle
 
     @property
     def hdl(self):
-        return self._handle
+        return self._hdl
 
     @property
     def name(self):
@@ -130,6 +80,50 @@ class ZPool(object):
     def errata(self):
         self._get_status()
         return self._errata
+
+    @LibZFSHandle.requires_refcount
+    @LibZFSHandle.auto
+    def refresh_properties(self):
+        if self._properties is not None:
+            if libzfs.zpool_props_refresh(self.hdl) != 0:
+                raise Exception("Unable to refresh our zpool properties")
+        self._properties = {}
+        self._propertysources = {}
+        for prop in zpool_prop_t:
+            if prop >= zpool_prop_t.ZPOOL_NUM_PROPS:
+                continue
+            sourceholder = ffi.new('zprop_source_t *')
+            ptype = zprop_type_t(libzfs.zpool_prop_get_type(int(prop)))
+            if ptype == zprop_type_t.PROP_TYPE_NUMBER:
+                value = libzfs.zpool_get_prop_int(self.hdl, int(prop), sourceholder)
+            elif ptype == zprop_type_t.PROP_TYPE_INDEX:
+                value = libzfs.zpool_get_prop_int(self.hdl, int(prop), sourceholder)
+                valuestr = ffi.new('char **')
+                if libzfs.zpool_prop_index_to_string(int(prop), value, valuestr) != 0:
+                    value = None
+                else:
+                    value = ffi.string(valuestr[0])
+            else:
+                holder = ffi.new('char [%s]' % ZPOOL_MAXNAMELEN)
+                if libzfs.zpool_get_prop_literal(self.hdl, int(prop), holder, ZPOOL_MAXNAMELEN,
+                                                 sourceholder, boolean_t(True)) != 0:
+                    value = None
+                else:
+                    value = ffi.string(holder)
+            self._properties[prop] = value
+            self._propertysources[prop] = zprop_source_t(sourceholder[0])
+
+    @property
+    def properties(self):
+        if self._properties is None:
+            self.refresh_properties()
+        return self._properties
+
+    @property
+    def propertysources(self):
+        if self._propertysources is None:
+            self.refresh_properties()
+        return self._propertysources
 
     @property
     def config(self):
