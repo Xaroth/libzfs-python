@@ -100,18 +100,19 @@ class ZPool(object):
         return self._state
 
     def _get_status(self):
-        if self._status is None:
-            msgid = ffi.new('char **')
-            errata = ffi.new('zpool_errata_t *')
+        if self._status is not None:
+            return
+        msgid = ffi.new('char **')
+        errata = ffi.new('zpool_errata_t *')
 
-            reason = libzfs.zpool_get_status(self.hdl, msgid, errata)
+        reason = libzfs.zpool_get_status(self.hdl, msgid, errata)
 
-            self._status = zpool_status_t(reason)
-            if msgid[0] == ffi.NULL:
-                self._status_extra = ''
-            else:
-                self._status_extra = ffi.string(msgid[0])
-            self._errata = zpool_errata_t(errata[0])
+        self._status = zpool_status_t(reason)
+        if msgid[0] == ffi.NULL:
+            self._status_extra = ''
+        else:
+            self._status_extra = ffi.string(msgid[0])
+        self._errata = zpool_errata_t(errata[0])
 
     @property
     def status_extra(self):
