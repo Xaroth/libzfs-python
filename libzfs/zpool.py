@@ -185,8 +185,7 @@ class ZPool(object):
         if guid:
             guid = int(guid)
 
-        with LibZFSHandle():
-            pools = cls.list()
+        pools = cls.list()
 
         if name:
             pools = [pool for pool in pools if pool.config.get(ZPOOL_CONFIG_POOL_NAME) == name]
