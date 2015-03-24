@@ -1,5 +1,6 @@
 from . import bindings
 import functools
+import atexit
 
 
 class NoHandleException(Exception):
@@ -99,3 +100,11 @@ class LibZFSHandle(object):
         This function reduces the refcount by one, and performs cleanup when no more references are active.
         """
         LibZFSHandle._del_ref()
+
+
+def exit_handler():
+    if LibZFSHandle._count:
+        LibZFSHandle._count = 0
+        LibZFSHandle.fini()
+
+atexit.register(exit_handler)
