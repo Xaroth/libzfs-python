@@ -34,6 +34,10 @@ class ZPool(object):
     def __init__(self, handle):
         self._hdl = handle
 
+    def __del__(self):
+        if hasattr(self, '_hdl'):
+            libzfs.zpool_close(self._hdl)
+
     @property
     def hdl(self):
         return self._hdl
