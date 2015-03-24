@@ -12,6 +12,8 @@ zpool_prop_t = bindings['zpool_prop_t']
 zpool_status_t = bindings['zpool_status_t']
 zprop_source_t = bindings['zprop_source_t']
 ZPOOL_MAXNAMELEN = bindings['ZPOOL_MAXNAMELEN']
+ZPOOL_CONFIG_POOL_NAME = bindings['ZPOOL_CONFIG_POOL_NAME']
+ZPOOL_CONFIG_POOL_GUID = bindings['ZPOOL_CONFIG_POOL_GUID']
 
 
 class ZPoolProperties(object):
@@ -181,3 +183,20 @@ class ZPool(object):
             libzfs.zpool_iter(hdl, _callback, ffi.NULL)
 
         return pools
+
+    @classmethod
+    def get(cls, name=None, guid=None):
+        if guid:
+            guid = int(guid)
+
+        with LibZFSHandle():
+            pools = cls.list()
+
+        if name:
+            pools = [pool for pool in pools if pool.config.get(ZPOOL_CONFIG_POOL_NAME) == name]
+        if guid:
+            pools = [pool for pool in pools if pool.config.get(ZPOOL_CONFIG_POOL_GUID) == guid]
+
+        if len(pools) == 1:
+            return pools[0]
+        raise KeyError("Could not find %s matching query" % cls.__name__)
