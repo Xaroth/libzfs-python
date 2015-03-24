@@ -57,6 +57,7 @@ class ZDataset(object):
             sourceholder = ffi.new('zprop_source_t *')
             statbuf = ffi.new('char [%s]' % ZFS_MAXNAMELEN)
             ptype = zprop_type_t(libzfs.zfs_prop_get_type(int(prop)))
+            value = None
 
             if ptype == zprop_type_t.PROP_TYPE_NUMBER:
                 holder = ffi.new("uint64_t *")
