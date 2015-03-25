@@ -38,6 +38,10 @@ class ZDataset(object):
         return self._name
 
     @property
+    def guid(self):
+        return self.properties.get(zfs_prop_t.ZFS_PROP_GUID)
+
+    @property
     def hdl(self):
         return self._hdl
 
@@ -109,6 +113,23 @@ class ZDataset(object):
             libzfs.zfs_iter_root(hdl, _callback, ffi.NULL)
 
         return datasets
+
+    @classmethod
+    @LibZFSHandle.requires_refcount
+    def get(cls, name=None, guid=None):
+        if guid:
+            guid = int(guid)
+
+        datasets = cls.list()
+
+        if name:
+            datasets = [dataset for dataset in datasets if dataset.name == name]
+        if guid:
+            datasets = [dataset for dataset in datasets if dataset.guid == guid]
+
+        if len(datasets) == 1:
+            return datasets[0]
+        raise KeyError("Could not find %s matching query" % cls.__name__)
 
     @classmethod
     @LibZFSHandle.requires_refcount
