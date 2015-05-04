@@ -138,6 +138,8 @@ class BindingManager(object):
 
     TYPEDEF_ENUM = 'typedef enum'
     TYPEDEF_ENUM_LEN = len(TYPEDEF_ENUM)
+    NORMAL_ENUM = 'enum'
+    NORMAL_ENUM_LEN = len(NORMAL_ENUM)
 
     DEFAULT_OUTPUT = join(BINDINGS_DIR, 'output')
 
@@ -185,7 +187,7 @@ class BindingManager(object):
     def process_enum_line(self, line):
         while RX_SHIFT.search(line):
             line = RX_SHIFT.sub(shift_replace, line, 1)
-        if line.startswith(self.TYPEDEF_ENUM):
+        if line.startswith(self.TYPEDEF_ENUM) or line.startswith(self.NORMAL_ENUM):
             # We now know absolutely sure it's an enum
             data, name = line.rsplit('}', 1)
             prefix, data = data.split('{', 1)
@@ -252,7 +254,7 @@ class BindingManager(object):
             if func_match and 'inline' in func_match.group(1):
                 continue
             # Check if we're dealing with an enum line
-            if line.startswith(self.TYPEDEF_ENUM):
+            if line.startswith(self.TYPEDEF_ENUM) or line.startswith(self.NORMAL_ENUM):
                 line = self.process_enum_line(line)
             # Check if we have an array def in this line
             if '[' in line and ']' in line:
