@@ -15,6 +15,34 @@ zprop_source_t = bindings['zprop_source_t']
 ZPOOL_MAXNAMELEN = bindings['ZPOOL_MAXNAMELEN']
 ZPOOL_CONFIG_POOL_NAME = bindings['ZPOOL_CONFIG_POOL_NAME']
 ZPOOL_CONFIG_POOL_GUID = bindings['ZPOOL_CONFIG_POOL_GUID']
+ZPOOL_CONFIG_VERSION = bindings['ZPOOL_CONFIG_VERSION']
+
+
+class ZPoolConfig(object):
+    _parent = None
+    _config = None
+
+    def __init__(self, zpool, config):
+        self._parent = zpool
+        self._config = config
+
+    def as_dict(self):
+        return self._config
+
+    @property
+    def name(self):
+        return self._config.get(ZPOOL_CONFIG_POOL_NAME, None)
+
+    @property
+    def guid(self):
+        return self._config.get(ZPOOL_CONFIG_POOL_GUID, None)
+
+    @property
+    def version(self):
+        return self._config.get(ZPOOL_CONFIG_VERSION, -1)
+
+    def __repr__(self):
+        return "<ZPoolConfig: %s>" % (self._parent.name)
 
 
 class ZPool(object):
@@ -133,20 +161,19 @@ class ZPool(object):
     def config(self):
         if self._config is None:
             config = libzfs.zpool_get_config(self.hdl, ffi.NULL)
-            self._config = ptr_to_dict(config, free=False)
+            self._config = ZPoolConfig(self, ptr_to_dict(config, free=False))
         return self._config
 
     @property
     def old_config(self):
-        if self._refreshed is False:
-            # Judging by zfs/cmd/zpool/zpool_main.c, we should ignore the 'old config'
-            #  the first time we refresh the iostats.
-            # The internals (zfs/lib/libzfs/libzfs_config.c) should probably clarify more
-            #  on why.. for now we'll mimic what we see.
-            return dict()
         if self._old_config is None:
-            old_config = libzfs.zpool_get_old_config(self.hdl)
-            self._old_config = ptr_to_dict(old_config, free=False)
+            if self._refreshed:
+                # Judging by zfs/cmd/zpool/zpool_main.c, we should ignore the 'old config'
+                #  the first time we refresh the iostats.
+                # The internals (zfs/lib/libzfs/libzfs_config.c) should probably clarify more
+                #  on why.. for now we'll mimic what we see.
+                old_config = libzfs.zpool_get_old_config(self.hdl)
+            self._old_config = ZPoolConfig(self, ptr_to_dict(old_config, free=False))
         return self._old_config
 
     @LibZFSHandle.requires_refcount
