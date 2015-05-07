@@ -17,21 +17,56 @@ zprop_source_t = bindings['zprop_source_t']
 ZPOOL_MAXNAMELEN = bindings['ZPOOL_MAXNAMELEN']
 
 
-def _config_getter(key, default, transform=None):
+def _config_getter(key, default=None, transform=None):
     def _getter(self):
+        if transform:
+            value = getattr(self, '_%s' % key, None)
+            if value is not None:
+                return value
         value = self.get(bindings[key], default)
         if transform:
             value = transform(value)
+            setattr(self, '_%s' % key, value)
         return value
     _getter.__name__ = key
     return property(_getter)
 
 
+class VDevItem(dict):
+    id = _config_getter('ZPOOL_CONFIG_ID')
+    guid = _config_getter('ZPOOL_CONFIG_GUID')
+    type = _config_getter('ZPOOL_CONFIG_TYPE')
+    create_txg = _config_getter('ZPOOL_CONFIG_CREATE_TXG', -1)
+    children = _config_getter('ZPOOL_CONFIG_CHILDREN', [], lambda children: [VDevChild(child) for child in children])
+
+    def __repr__(self):
+        return "<%s: %s (%s)>" % (self.__class__.__name__, self.type, self.guid)
+
+
+class VDevChild(VDevItem):
+    ashift = _config_getter('ZPOOL_CONFIG_ASHIFT', -1)
+    asize = _config_getter('ZPOOL_CONFIG_ASIZE', -1)
+    is_log = _config_getter('ZPOOL_CONFIG_IS_LOG', 0, bool)
+
+
+class VDevTree(VDevItem):
+    pass
+
+
 class ZPoolConfig(dict):
-    name = _config_getter('ZPOOL_CONFIG_POOL_NAME', None)
-    guid = _config_getter('ZPOOL_CONFIG_POOL_GUID', None)
+    name = _config_getter('ZPOOL_CONFIG_POOL_NAME')
+    guid = _config_getter('ZPOOL_CONFIG_POOL_GUID')
+    hostid = _config_getter('ZPOOL_CONFIG_HOSTID')
+    hostname = _config_getter('ZPOOL_CONFIG_HOSTNAME')
     version = _config_getter('ZPOOL_CONFIG_VERSION', -1)
     initial_load_time = _config_getter('ZPOOL_CONFIG_LOADED_TIME', 0, lambda x: datetime.fromtimestamp(x[0]))
+
+    error_count = _config_getter('ZPOOL_CONFIG_ERRCOUNT', 0)
+    feature_stats = _config_getter('ZPOOL_CONFIG_FEATURE_STATS', {})
+    features_for_read = _config_getter('ZPOOL_CONFIG_FEATURES_FOR_READ', {})
+
+    vdev_tree = _config_getter('ZPOOL_CONFIG_VDEV_TREE', {}, VDevTree)
+    current_txg = _config_getter('ZPOOL_CONFIG_POOL_TXG', -1)
 
     def __repr__(self):
         return "<ZPoolConfig: %s>" % (self.name)
