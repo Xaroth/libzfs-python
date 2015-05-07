@@ -16,10 +16,8 @@ zpool_status_t = bindings['zpool_status_t']
 zprop_source_t = bindings['zprop_source_t']
 ZPOOL_MAXNAMELEN = bindings['ZPOOL_MAXNAMELEN']
 
-NO_DEFAULT = object()
 
-
-def _config_getter(key, default=NO_DEFAULT, transform=None):
+def _config_getter(key, default, transform=None):
     def _getter(self):
         value = self.get(bindings[key], default)
         if transform:
@@ -29,32 +27,14 @@ def _config_getter(key, default=NO_DEFAULT, transform=None):
     return property(_getter)
 
 
-class ZPoolConfig(object):
-    _parent = None
-    _config = None
-
-    def __init__(self, zpool, config):
-        self._parent = zpool
-        self._config = config
-
-    def as_dict(self):
-        return self._config
-
-    def __getitem__(self, key):
-        return self._config[key]
-
-    def get(self, key, default=NO_DEFAULT):
-        if default is NO_DEFAULT:
-            return self._config.get(key)
-        return self._config.get(key, default)
-
+class ZPoolConfig(dict):
     name = _config_getter('ZPOOL_CONFIG_POOL_NAME', None)
     guid = _config_getter('ZPOOL_CONFIG_POOL_GUID', None)
     version = _config_getter('ZPOOL_CONFIG_VERSION', -1)
     initial_load_time = _config_getter('ZPOOL_CONFIG_LOADED_TIME', 0, lambda x: datetime.fromtimestamp(x[0]))
 
     def __repr__(self):
-        return "<ZPoolConfig: %s>" % (self._parent.name)
+        return "<ZPoolConfig: %s>" % (self.name)
 
 
 class ZPool(object):
@@ -173,7 +153,7 @@ class ZPool(object):
     def config(self):
         if self._config is None:
             config = libzfs.zpool_get_config(self.hdl, ffi.NULL)
-            self._config = ZPoolConfig(self, ptr_to_dict(config, free=False))
+            self._config = ZPoolConfig(ptr_to_dict(config, free=False))
         return self._config
 
     @property
@@ -185,7 +165,7 @@ class ZPool(object):
                 # The internals (zfs/lib/libzfs/libzfs_config.c) should probably clarify more
                 #  on why.. for now we'll mimic what we see.
                 old_config = libzfs.zpool_get_old_config(self.hdl)
-            self._old_config = ZPoolConfig(self, ptr_to_dict(old_config, free=False))
+            self._old_config = ZPoolConfig(ptr_to_dict(old_config, free=False))
         return self._old_config
 
     @LibZFSHandle.requires_refcount
