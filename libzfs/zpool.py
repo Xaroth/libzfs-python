@@ -3,6 +3,8 @@ from .nvpair import ptr_to_dict
 from .handle import LibZFSHandle
 from .utils.conversion import boolean_t
 
+from datetime import datetime
+
 libzfs = bindings.libzfs
 ffi = bindings.ffi
 
@@ -13,9 +15,18 @@ zprop_type_t = bindings['zprop_type_t']
 zpool_status_t = bindings['zpool_status_t']
 zprop_source_t = bindings['zprop_source_t']
 ZPOOL_MAXNAMELEN = bindings['ZPOOL_MAXNAMELEN']
-ZPOOL_CONFIG_POOL_NAME = bindings['ZPOOL_CONFIG_POOL_NAME']
-ZPOOL_CONFIG_POOL_GUID = bindings['ZPOOL_CONFIG_POOL_GUID']
-ZPOOL_CONFIG_VERSION = bindings['ZPOOL_CONFIG_VERSION']
+
+NO_DEFAULT = object()
+
+
+def _config_getter(key, default=NO_DEFAULT, transform=None):
+    def _getter(self):
+        value = self.get(bindings[key], default)
+        if transform:
+            value = transform(value)
+        return value
+    _getter.__name__ = key
+    return property(_getter)
 
 
 class ZPoolConfig(object):
@@ -29,17 +40,18 @@ class ZPoolConfig(object):
     def as_dict(self):
         return self._config
 
-    @property
-    def name(self):
-        return self._config.get(ZPOOL_CONFIG_POOL_NAME, None)
+    def __getitem__(self, key):
+        return self._config[key]
 
-    @property
-    def guid(self):
-        return self._config.get(ZPOOL_CONFIG_POOL_GUID, None)
+    def get(self, key, default=NO_DEFAULT):
+        if default is NO_DEFAULT:
+            return self._config.get(key)
+        return self._config.get(key, default)
 
-    @property
-    def version(self):
-        return self._config.get(ZPOOL_CONFIG_VERSION, -1)
+    name = _config_getter('ZPOOL_CONFIG_POOL_NAME', None)
+    guid = _config_getter('ZPOOL_CONFIG_POOL_GUID', None)
+    version = _config_getter('ZPOOL_CONFIG_VERSION', -1)
+    initial_load_time = _config_getter('ZPOOL_CONFIG_LOADED_TIME', 0, lambda x: datetime.fromtimestamp(x[0]))
 
     def __repr__(self):
         return "<ZPoolConfig: %s>" % (self._parent.name)
@@ -219,9 +231,9 @@ class ZPool(object):
         pools = cls.list()
 
         if name:
-            pools = [pool for pool in pools if pool.config.get(ZPOOL_CONFIG_POOL_NAME) == name]
+            pools = [pool for pool in pools if pool.config.name == name]
         if guid:
-            pools = [pool for pool in pools if pool.config.get(ZPOOL_CONFIG_POOL_GUID) == guid]
+            pools = [pool for pool in pools if pool.config.guid == guid]
 
         if len(pools) == 1:
             return pools[0]
