@@ -41,9 +41,15 @@ class ZPoolProperties(dict):
     version = _config_getter('ZPOOL_PROP_VERSION', -1)
     fragmentation = _config_getter('ZPOOL_PROP_FRAGMENTATION', 0)
 
+    def __repr__(self):
+        base = dict.__repr__(self)
+        return "<%s: %s: %s>" % (self.__class__.__name__, self.name, base)
+
 
 class ZPoolPropSources(dict):
-    pass
+    def __repr__(self):
+        base = dict.__repr__(self)
+        return "<%s: %s>" % (self.__class__.__name__, base)
 
 
 class VDevItem(dict):
@@ -54,7 +60,8 @@ class VDevItem(dict):
     children = _config_getter('ZPOOL_CONFIG_CHILDREN', [], lambda children: [VDevChild(child) for child in children])
 
     def __repr__(self):
-        return "<%s: %s (%s)>" % (self.__class__.__name__, self.type, self.guid)
+        base = dict.__repr__(self)
+        return "<%s: %s (%s): %s>" % (self.__class__.__name__, self.type, self.guid, base)
 
 
 class VDevChild(VDevItem):
@@ -83,7 +90,8 @@ class ZPoolConfig(dict):
     current_txg = _config_getter('ZPOOL_CONFIG_POOL_TXG', -1)
 
     def __repr__(self):
-        return "<ZPoolConfig: %s>" % (self.name)
+        base = dict.__repr__(self)
+        return "<ZPoolConfig: %s: %s>" % (self.name, base)
 
 
 class ZPool(object):
