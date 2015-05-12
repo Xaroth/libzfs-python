@@ -32,6 +32,20 @@ def _config_getter(key, default=None, transform=None):
     return property(_getter)
 
 
+class ZPoolProperties(dict):
+    name = _config_getter('ZPOOL_PROP_NAME')
+    size = _config_getter('ZPOOL_PROP_SIZE', -1)
+    capacity = _config_getter('ZPOOL_PROP_CAPACITY', -1)
+    allocated = _config_getter('ZPOOL_PROP_ALLOCATED', -1)
+    free = _config_getter('ZPOOL_PROP_FREE', -1)
+    version = _config_getter('ZPOOL_PROP_VERSION', -1)
+    fragmentation = _config_getter('ZPOOL_PROP_FRAGMENTATION', 0)
+
+
+class ZPoolPropSources(dict):
+    pass
+
+
 class VDevItem(dict):
     id = _config_getter('ZPOOL_CONFIG_ID')
     guid = _config_getter('ZPOOL_CONFIG_GUID')
@@ -146,8 +160,8 @@ class ZPool(object):
         if self._properties is not None:
             if libzfs.zpool_props_refresh(self.hdl) != 0:
                 raise Exception("Unable to refresh our zpool properties")
-        self._properties = {}
-        self._propertysources = {}
+        self._properties = ZPoolProperties()
+        self._propertysources = ZPoolPropSources()
         for prop in zpool_prop_t:
             if prop >= zpool_prop_t.ZPOOL_NUM_PROPS:
                 continue
