@@ -222,7 +222,7 @@ class ZPool(object):
                 # The internals (zfs/lib/libzfs/libzfs_config.c) should probably clarify more
                 #  on why.. for now we'll mimic what we see.
                 old_config = libzfs.zpool_get_old_config(self.hdl)
-            self._old_config = ZPoolConfig(ptr_to_dict(old_config, free=False))
+                self._old_config = ZPoolConfig(ptr_to_dict(old_config, free=False))
         return self._old_config
 
     @LibZFSHandle.requires_refcount
