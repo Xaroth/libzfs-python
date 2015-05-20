@@ -14,21 +14,29 @@ zpool_prop_t = bindings['zpool_prop_t']
 zprop_type_t = bindings['zprop_type_t']
 zpool_status_t = bindings['zpool_status_t']
 zprop_source_t = bindings['zprop_source_t']
+zio_type_t = bindings['zio_type_t']
 ZPOOL_MAXNAMELEN = bindings['ZPOOL_MAXNAMELEN']
 
 
-def _config_getter(key, default=None, transform=None):
+def _config_getter(name, default=None, transform=None):
+    key = bindings[name]
+    return _key_getter(key, default=default, transform=transform, name=name)
+
+
+def _key_getter(key, default=None, transform=None, name=None):
+    name = name or key
+
     def _getter(self):
         if transform:
-            value = getattr(self, '_%s' % key, None)
+            value = getattr(self, '_%s' % name, None)
             if value is not None:
                 return value
-        value = self.get(bindings[key], default)
+        value = self.get(key, default)
         if transform:
             value = transform(value)
-            setattr(self, '_%s' % key, value)
+            setattr(self, '_%s' % name, value)
         return value
-    _getter.__name__ = key
+    _getter.__name__ = name
     return property(_getter)
 
 
@@ -52,6 +60,50 @@ class ZPoolPropSources(dict):
         return "<%s: %s>" % (self.__class__.__name__, base)
 
 
+class VDevStats(dict):
+    ops = _key_getter('ops', [], dict)
+    bytes = _key_getter('bytes', [], dict)
+
+    @classmethod
+    def from_data(cls, data):
+        if len(data) < 27:
+            extra = [None, ] * (27 - len(data))
+            data += extra
+        keys = [
+            'timestamp',
+            'aux',
+            'alloc',
+            'space',
+            'dspace',
+            'rsize',
+            'esize',
+            ('ops', zio_type_t.ZIO_TYPES),
+            ('bytes', zio_type_t.ZIO_TYPES),
+            'read_errors',
+            'write_errors',
+            'checksum_errors',
+            'self_healed',
+            'scan_removing',
+            'scan_processed',
+            'fragmentation',
+        ]
+        items = zip(
+            ['timestamp', 'state', 'aux', 'alloc', 'space', 'dspace', 'rsize', 'esize'],
+            data[:8]
+        )
+        keys = [x.name for x in zio_type_t if x < zio_type_t.ZIO_TYPES]
+        items += (
+            ('ops', zip(keys, data[8:14])),
+            ('bytes', zip(keys, data[14:20])),
+        )
+        items += zip(
+            ['read_errors', 'write_errors', 'checksum_errors', 'self_healed', 'scan_removing',
+            'scan_processed', 'fragmentation'],
+            data[20:27]
+        )
+        return cls(items)
+
+
 class VDevItem(dict):
     id = _config_getter('ZPOOL_CONFIG_ID')
     guid = _config_getter('ZPOOL_CONFIG_GUID')
@@ -68,6 +120,8 @@ class VDevChild(VDevItem):
     ashift = _config_getter('ZPOOL_CONFIG_ASHIFT', -1)
     asize = _config_getter('ZPOOL_CONFIG_ASIZE', -1)
     is_log = _config_getter('ZPOOL_CONFIG_IS_LOG', 0, bool)
+
+    vdev_stats = _config_getter('ZPOOL_CONFIG_VDEV_STATS', [], VDevStats.from_data)
 
 
 class VDevTree(VDevItem):
