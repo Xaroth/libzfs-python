@@ -38,6 +38,7 @@ class Test_ZPool(_LibZFSHandleCase):
         assert len(config.keys()) > 0
         assert len(oldconfig.keys()) > 0
         assert config == oldconfig
+        assert config.get(bindings['ZPOOL_CONFIG_POOL_NAME'])
 
     def test_006_get_zpool_config_easy_access(self):
         from datetime import datetime
