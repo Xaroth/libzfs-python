@@ -11,7 +11,7 @@ Python CFFI bindings for libzfs
 
 AUTHOR_NAME = "Steven 'Xaroth' Noorbergen"
 AUTHOR_EMAIL = "devnull@xaroth.nl"
-AUTHOR_URL = "www.xaroth.nl"
+AUTHOR_URL = "https://github.com/Xaroth/libzfs-python"
 
 
 classes = """
