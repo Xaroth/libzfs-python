@@ -85,6 +85,7 @@ class VDevStats(dict):
         )
         return cls(items)
 
+    def __sub__(self, other):
         if not isinstance(other, self.__class__):
             raise TypeError(other)
         items = [
