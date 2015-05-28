@@ -69,24 +69,6 @@ class VDevStats(dict):
         if len(data) < 27:
             extra = [None, ] * (27 - len(data))
             data += extra
-        keys = [
-            'timestamp',
-            'aux',
-            'alloc',
-            'space',
-            'dspace',
-            'rsize',
-            'esize',
-            ('ops', zio_type_t.ZIO_TYPES),
-            ('bytes', zio_type_t.ZIO_TYPES),
-            'read_errors',
-            'write_errors',
-            'checksum_errors',
-            'self_healed',
-            'scan_removing',
-            'scan_processed',
-            'fragmentation',
-        ]
         items = zip(
             ['timestamp', 'state', 'aux', 'alloc', 'space', 'dspace', 'rsize', 'esize'],
             data[:8]
