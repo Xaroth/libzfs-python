@@ -1,8 +1,6 @@
-from setuptools import setup, find_packages, findall
-from setuptools.command.install import install
+from setuptools import setup, find_packages
 import sys
 import os
-from os.path import join, abspath, dirname
 
 NAME = "libzfs"
 VERBOSE_NAME = "libzfs"
