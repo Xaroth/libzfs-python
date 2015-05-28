@@ -1,2 +1,6 @@
 include README.md
+include build_bindings.py
+include requirements.txt
+include LICENSE
+include AUTHORS
 recursive-include libzfs/bindings *
