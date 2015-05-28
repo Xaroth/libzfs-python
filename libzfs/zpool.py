@@ -85,6 +85,19 @@ class VDevStats(dict):
         )
         return cls(items)
 
+        if not isinstance(other, self.__class__):
+            raise TypeError(other)
+        items = [
+            (key, self[key] - other[key]) for key in self.keys() if key in other and key not in ['ops', 'bytes', 'fragmentation']
+        ]
+        for key in ['ops', 'bytes']:
+            s, o = getattr(self, key), getattr(other, key)
+            new_data = [(x, s[x.name] - o[x.name]) for x in zio_type_t if x < zio_type_t.ZIO_TYPES]
+            items.append((key, new_data))
+        fragmentation = self['fragmentation']
+        items.append(('fragmentation', (fragmentation - other['fragmentation']) if fragmentation is not None else None))
+        return self.__class__(items)
+
 
 class VDevItem(dict):
     id = _config_getter('ZPOOL_CONFIG_ID')
