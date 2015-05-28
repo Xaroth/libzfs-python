@@ -3,6 +3,8 @@ from .nvpair import ptr_to_dict
 from .handle import LibZFSHandle
 from .utils.conversion import boolean_t
 
+from datetime import datetime
+
 libzfs = bindings.libzfs
 ffi = bindings.ffi
 
@@ -12,9 +14,134 @@ zpool_prop_t = bindings['zpool_prop_t']
 zprop_type_t = bindings['zprop_type_t']
 zpool_status_t = bindings['zpool_status_t']
 zprop_source_t = bindings['zprop_source_t']
+zio_type_t = bindings['zio_type_t']
 ZPOOL_MAXNAMELEN = bindings['ZPOOL_MAXNAMELEN']
-ZPOOL_CONFIG_POOL_NAME = bindings['ZPOOL_CONFIG_POOL_NAME']
-ZPOOL_CONFIG_POOL_GUID = bindings['ZPOOL_CONFIG_POOL_GUID']
+
+
+def _config_getter(name, default=None, transform=None):
+    key = bindings[name]
+    return _key_getter(key, default=default, transform=transform, name=name)
+
+
+def _key_getter(key, default=None, transform=None, name=None):
+    name = name or key
+
+    def _getter(self):
+        if transform:
+            value = getattr(self, '_%s' % name, None)
+            if value is not None:
+                return value
+        value = self.get(key, default)
+        if transform:
+            value = transform(value)
+            setattr(self, '_%s' % name, value)
+        return value
+    _getter.__name__ = name
+    return property(_getter)
+
+
+class ZPoolProperties(dict):
+    name = _config_getter('ZPOOL_PROP_NAME')
+    size = _config_getter('ZPOOL_PROP_SIZE', -1)
+    capacity = _config_getter('ZPOOL_PROP_CAPACITY', -1)
+    allocated = _config_getter('ZPOOL_PROP_ALLOCATED', -1)
+    free = _config_getter('ZPOOL_PROP_FREE', -1)
+    version = _config_getter('ZPOOL_PROP_VERSION', -1)
+    fragmentation = _config_getter('ZPOOL_PROP_FRAGMENTATION', 0)
+
+    def __repr__(self):
+        base = dict.__repr__(self)
+        return "<%s: %s: %s>" % (self.__class__.__name__, self.name, base)
+
+
+class ZPoolPropSources(dict):
+    def __repr__(self):
+        base = dict.__repr__(self)
+        return "<%s: %s>" % (self.__class__.__name__, base)
+
+
+class VDevStats(dict):
+    ops = _key_getter('ops', [], dict)
+    bytes = _key_getter('bytes', [], dict)
+
+    @classmethod
+    def from_data(cls, data):
+        if len(data) < 27:
+            extra = [None, ] * (27 - len(data))
+            data += extra
+        items = zip(
+            ['timestamp', 'state', 'aux', 'alloc', 'space', 'dspace', 'rsize', 'esize'],
+            data[:8]
+        )
+        keys = [x.name for x in zio_type_t if x < zio_type_t.ZIO_TYPES]
+        items += (
+            ('ops', zip(keys, data[8:14])),
+            ('bytes', zip(keys, data[14:20])),
+        )
+        items += zip(
+            ['read_errors', 'write_errors', 'checksum_errors', 'self_healed', 'scan_removing',
+            'scan_processed', 'fragmentation'],
+            data[20:27]
+        )
+        return cls(items)
+
+    def __sub__(self, other):
+        if not isinstance(other, self.__class__):
+            raise TypeError(other)
+        items = [
+            (key, self[key] - other[key]) for key in self.keys() if key in other and key not in ['ops', 'bytes', 'fragmentation']
+        ]
+        for key in ['ops', 'bytes']:
+            s, o = getattr(self, key), getattr(other, key)
+            new_data = [(x, s[x.name] - o[x.name]) for x in zio_type_t if x < zio_type_t.ZIO_TYPES]
+            items.append((key, new_data))
+        fragmentation = self['fragmentation']
+        items.append(('fragmentation', (fragmentation - other['fragmentation']) if fragmentation is not None else None))
+        return self.__class__(items)
+
+
+class VDevItem(dict):
+    id = _config_getter('ZPOOL_CONFIG_ID')
+    guid = _config_getter('ZPOOL_CONFIG_GUID')
+    type = _config_getter('ZPOOL_CONFIG_TYPE')
+    create_txg = _config_getter('ZPOOL_CONFIG_CREATE_TXG', -1)
+    children = _config_getter('ZPOOL_CONFIG_CHILDREN', [], lambda children: [VDevChild(child) for child in children])
+
+    def __repr__(self):
+        base = dict.__repr__(self)
+        return "<%s: %s (%s): %s>" % (self.__class__.__name__, self.type, self.guid, base)
+
+
+class VDevChild(VDevItem):
+    ashift = _config_getter('ZPOOL_CONFIG_ASHIFT', -1)
+    asize = _config_getter('ZPOOL_CONFIG_ASIZE', -1)
+    is_log = _config_getter('ZPOOL_CONFIG_IS_LOG', 0, bool)
+
+    vdev_stats = _config_getter('ZPOOL_CONFIG_VDEV_STATS', [], VDevStats.from_data)
+
+
+class VDevTree(VDevItem):
+    pass
+
+
+class ZPoolConfig(dict):
+    name = _config_getter('ZPOOL_CONFIG_POOL_NAME')
+    guid = _config_getter('ZPOOL_CONFIG_POOL_GUID')
+    hostid = _config_getter('ZPOOL_CONFIG_HOSTID')
+    hostname = _config_getter('ZPOOL_CONFIG_HOSTNAME')
+    version = _config_getter('ZPOOL_CONFIG_VERSION', -1)
+    initial_load_time = _config_getter('ZPOOL_CONFIG_LOADED_TIME', 0, lambda x: datetime.fromtimestamp(x[0]))
+
+    error_count = _config_getter('ZPOOL_CONFIG_ERRCOUNT', 0)
+    feature_stats = _config_getter('ZPOOL_CONFIG_FEATURE_STATS', {})
+    features_for_read = _config_getter('ZPOOL_CONFIG_FEATURES_FOR_READ', {})
+
+    vdev_tree = _config_getter('ZPOOL_CONFIG_VDEV_TREE', {}, VDevTree)
+    current_txg = _config_getter('ZPOOL_CONFIG_POOL_TXG', -1)
+
+    def __repr__(self):
+        base = dict.__repr__(self)
+        return "<ZPoolConfig: %s: %s>" % (self.name, base)
 
 
 class ZPool(object):
@@ -91,8 +218,8 @@ class ZPool(object):
         if self._properties is not None:
             if libzfs.zpool_props_refresh(self.hdl) != 0:
                 raise Exception("Unable to refresh our zpool properties")
-        self._properties = {}
-        self._propertysources = {}
+        self._properties = ZPoolProperties()
+        self._propertysources = ZPoolPropSources()
         for prop in zpool_prop_t:
             if prop >= zpool_prop_t.ZPOOL_NUM_PROPS:
                 continue
@@ -133,20 +260,19 @@ class ZPool(object):
     def config(self):
         if self._config is None:
             config = libzfs.zpool_get_config(self.hdl, ffi.NULL)
-            self._config = ptr_to_dict(config, free=False)
+            self._config = ZPoolConfig(ptr_to_dict(config, free=False))
         return self._config
 
     @property
     def old_config(self):
-        if self._refreshed is False:
-            # Judging by zfs/cmd/zpool/zpool_main.c, we should ignore the 'old config'
-            #  the first time we refresh the iostats.
-            # The internals (zfs/lib/libzfs/libzfs_config.c) should probably clarify more
-            #  on why.. for now we'll mimic what we see.
-            return dict()
         if self._old_config is None:
-            old_config = libzfs.zpool_get_old_config(self.hdl)
-            self._old_config = ptr_to_dict(old_config, free=False)
+            if self._refreshed:
+                # Judging by zfs/cmd/zpool/zpool_main.c, we should ignore the 'old config'
+                #  the first time we refresh the iostats.
+                # The internals (zfs/lib/libzfs/libzfs_config.c) should probably clarify more
+                #  on why.. for now we'll mimic what we see.
+                old_config = libzfs.zpool_get_old_config(self.hdl)
+                self._old_config = ZPoolConfig(ptr_to_dict(old_config, free=False))
         return self._old_config
 
     @LibZFSHandle.requires_refcount
@@ -192,9 +318,9 @@ class ZPool(object):
         pools = cls.list()
 
         if name:
-            pools = [pool for pool in pools if pool.config.get(ZPOOL_CONFIG_POOL_NAME) == name]
+            pools = [pool for pool in pools if pool.config.name == name]
         if guid:
-            pools = [pool for pool in pools if pool.config.get(ZPOOL_CONFIG_POOL_GUID) == guid]
+            pools = [pool for pool in pools if pool.config.guid == guid]
 
         if len(pools) == 1:
             return pools[0]
