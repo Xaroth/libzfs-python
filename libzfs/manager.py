@@ -7,6 +7,8 @@ import os
 from os.path import join, dirname, abspath, exists
 import re
 import subprocess
+import logging
+logger = logging.getLogger(__name__)
 
 from .utils import six
 
@@ -378,9 +380,9 @@ class BindingManager(object):
             return self._libzfs
         try:
             from libzfs._libzfs import ffi, lib
-            print("Using pre-built libzfs._libzfs")
+            logger.debug("Using pre-built libzfs._libzfs")
         except ImportError:
-            print("Failed to import libzfs._libzfs, manually compiling.")
+            logger.debug("Failed to import libzfs._libzfs, manually compiling.")
             ffi = self.ffi
             lib = ffi.verify(
                 self.ffi_source,
