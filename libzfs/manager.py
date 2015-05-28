@@ -333,7 +333,7 @@ class BindingManager(object):
             fh.write(headers)
         return headers, defines, enums
 
-    def compile(self, headers=None, defines=None, enums=None):
+    def prepare_compile(self, headers=None, defines=None, enums=None):
         output_dir = os.environ.get('LIBZFS_OUTPUT', self.DEFAULT_OUTPUT)
         headers_path = join(output_dir, 'headers.h')
         defines_path = join(output_dir, 'defines.json')
@@ -356,43 +356,74 @@ class BindingManager(object):
 
         headers += self.DEFAULT_HEADERS
 
-        ffi = FFI()
-        ffi.cdef(headers, override=True)
-        return ffi, defines, enums
+        return defines, enums, headers
 
     @property
     def ffi(self):
         if self._ffi:
             return self._ffi
-        self._ffi, self._defines, self._enums = self.compile()
+        self._defines, self._enums, headers = self.prepare_compile()
+        self._ffi = FFI()
+        self._ffi.cdef(headers, override=True)
+        if hasattr(self._ffi, "set_source"):
+            self._ffi.set_source('libzfs._libzfs', self.ffi_source,
+                                 define_macros=self.ffi_define_macros,
+                                 include_dirs=self.ffi_includes,
+                                 libraries=self.ffi_libraries)
         return self._ffi
 
     @property
     def libzfs(self):
         if self._libzfs:
             return self._libzfs
-        verify = six.binary_type(self.parameters.get('verify_source', self.DEFAULT_VERIFY))
-        libraries = self._merge_with_environ(self.DEFAULT_LIBRARIES, 'LIBZFS_LIBRARIES', 'libraries')
-        includes = self._merge_with_environ(self.DEFAULT_VERIFY_INCLUDE_DIRS,
-                                            'LIBZFS_EXTRA_VERIFY_INCLUDE_DIRS',
-                                            'verify_include_dirs')
-        macros = self.get_defined_params()
-        ffi = self.ffi
-        self._libzfs = ffi.verify(verify, define_macros=macros, include_dirs=includes, libraries=libraries)
-        return self._libzfs
+        try:
+            from libzfs._libzfs import ffi, lib
+            print("Using pre-built libzfs._libzfs")
+        except ImportError:
+            print("Failed to import libzfs._libzfs, manually compiling.")
+            ffi = self.ffi
+            lib = ffi.verify(
+                self.ffi_source,
+                define_macros=self.ffi_define_macros,
+                include_dirs=self.ffi_includes,
+                libraries=self.ffi_libraries,
+                ext_package='libzfs._libzfs')
+        self._ffi = ffi
+        self._libzfs = lib
+        return lib
+
+    @property
+    def ffi_define_macros(self):
+        return self.get_defined_params()
+
+    @property
+    def ffi_includes(self):
+        return self._merge_with_environ(self.DEFAULT_VERIFY_INCLUDE_DIRS,
+                                        'LIBZFS_EXTRA_VERIFY_INCLUDE_DIRS',
+                                        'verify_include_dirs')
+
+    @property
+    def ffi_libraries(self):
+        return self._merge_with_environ(self.DEFAULT_LIBRARIES,
+                                        'LIBZFS_LIBRARIES',
+                                        'libraries')
+
+    @property
+    def ffi_source(self):
+        return six.binary_type(self.parameters.get('verify_source', self.DEFAULT_VERIFY))
 
     @property
     def defines(self):
         if self._defines:
             return self._defines
-        self._ffi, self._defines, self._enums = self.compile()
+        self._defines, self._enums, _ = self.prepare_compile()
         return self._defines
 
     @property
     def enums(self):
         if self._enums:
             return self._enums
-        self._ffi, self._defines, self._enums = self.compile()
+        self._defines, self._enums, _ = self.prepare_compile()
         return self._enums
 
     def __getitem__(self, key):

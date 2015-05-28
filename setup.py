@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, findall
 from setuptools.command.install import install
 import sys
 import os
@@ -81,12 +81,13 @@ setup(
     platforms=['any'],
     license='GPL v3',
     packages=find_packages(exclude=['tests', 'tests.*', 'docs', 'docs.*']),
+    include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
     classifiers=classifiers,
     entry_points=entrypoints,
     long_description=DESC,
     extras_require={},
-    ext_package='_libzfs',
-    ext_modules=[libzfs.bindings.manager.default_manager.ffi.verifier.get_extensions()],
+    setup_requires=["cffi>=1.0.0"],
+    cffi_modules=['build_bindings.py:ffi'],
     **extra)
