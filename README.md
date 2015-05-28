@@ -16,16 +16,6 @@ The main python version being developed for is 2.7, however, the long-term goal 
 Installation
 ============
 
-libzfs-python uses ``setuptools`` to install, however, there is one small twist.
+libzfs-python requires CFFI version 1.0 or higher to be installed (due to the changes in CFFI's compile mechanisms released with that version). During the installation of the package the cffi bindings will automatically be built.
 
-Since libzfs' interface can change between versions, it is possible to specify the ``LIBZFS_VERSION`` environment variable while running ``python setup.py install``, to force the library to keep that version in mind.
-
-This, however, does also mean that, when you update libzfs, you will need to reinstall libzfs-python (as the new binding module will have to be compiled).
-
-The version specified during install (or the configured latest version in the code) can be retrieved by the following code:
-
-````
->>> import libzfs
->>> print(libzfs.libzfs_version)
-0.6.2
-````
+If/when you update zfs on your system, it is wise to re-install libzfs-python to ensure it is correctly compiled against the currently installed libzfs version.
