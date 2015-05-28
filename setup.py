@@ -18,7 +18,7 @@ AUTHOR_URL = "www.xaroth.nl"
 
 classes = """
     Development Status :: 2 - Pre-Alpha
-    License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+    License :: OSI Approved :: MIT License
     Operating System :: OS Independent
     Operating System :: POSIX
     Operating System :: Unix
@@ -79,7 +79,7 @@ setup(
     author_email=AUTHOR_EMAIL,
     url=AUTHOR_URL,
     platforms=['any'],
-    license='GPL v3',
+    license='MIT License',
     packages=find_packages(exclude=['tests', 'tests.*', 'docs', 'docs.*']),
     zip_safe=False,
     install_requires=install_requires,
