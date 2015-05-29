@@ -78,7 +78,7 @@ setup(
     url=AUTHOR_URL,
     platforms=['any'],
     license='MIT License',
-    packages=find_packages(exclude=['tests', 'tests.*', 'docs', 'docs.*']),
+    packages=find_packages(exclude=['test', 'test.*', 'docs', 'docs.*']),
     include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
