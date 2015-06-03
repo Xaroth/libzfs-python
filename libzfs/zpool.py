@@ -106,6 +106,7 @@ class VDevItem(dict):
     type = _config_getter('ZPOOL_CONFIG_TYPE')
     create_txg = _config_getter('ZPOOL_CONFIG_CREATE_TXG', -1)
     children = _config_getter('ZPOOL_CONFIG_CHILDREN', [], lambda children: [VDevChild(child) for child in children])
+    vdev_stats = _config_getter('ZPOOL_CONFIG_VDEV_STATS', [], VDevStats.from_data)
 
     def __repr__(self):
         base = dict.__repr__(self)
@@ -116,8 +117,6 @@ class VDevChild(VDevItem):
     ashift = _config_getter('ZPOOL_CONFIG_ASHIFT', -1)
     asize = _config_getter('ZPOOL_CONFIG_ASIZE', -1)
     is_log = _config_getter('ZPOOL_CONFIG_IS_LOG', 0, bool)
-
-    vdev_stats = _config_getter('ZPOOL_CONFIG_VDEV_STATS', [], VDevStats.from_data)
 
 
 class VDevTree(VDevItem):
