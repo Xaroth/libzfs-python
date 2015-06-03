@@ -44,7 +44,20 @@ def _key_getter(key, default=None, transform=None, name=None):
     return property(_getter)
 
 
-class ZPoolProperties(dict):
+class ParsedDict(dict):
+    @classmethod
+    def parse_to_dict(cls, obj):
+        if isinstance(obj, ParsedDict):
+            return {key: cls.parse_to_dict(getattr(obj, key, obj[key])) for key in obj}
+        if isinstance(obj, list):
+            return [cls.parse_to_dict(x) for x in obj]
+        return obj
+
+    def to_parsed_dict(self):
+        return ParsedDict.parse_to_dict(self)
+
+
+class ZPoolProperties(ParsedDict):
     name = _config_getter('ZPOOL_PROP_NAME')
     size = _config_getter('ZPOOL_PROP_SIZE', -1)
     capacity = _config_getter('ZPOOL_PROP_CAPACITY', -1)
@@ -54,17 +67,17 @@ class ZPoolProperties(dict):
     fragmentation = _config_getter('ZPOOL_PROP_FRAGMENTATION', 0)
 
     def __repr__(self):
-        base = dict.__repr__(self)
+        base = ParsedDict.__repr__(self)
         return "<%s: %s: %s>" % (self.__class__.__name__, self.name, base)
 
 
-class ZPoolPropSources(dict):
+class ZPoolPropSources(ParsedDict):
     def __repr__(self):
-        base = dict.__repr__(self)
+        base = ParsedDict.__repr__(self)
         return "<%s: %s>" % (self.__class__.__name__, base)
 
 
-class VDevStats(dict):
+class VDevStats(ParsedDict):
     ops = _key_getter('ops', [], dict)
     bytes = _key_getter('bytes', [], dict)
 
@@ -107,7 +120,7 @@ class VDevStats(dict):
         return self.__class__(items)
 
 
-class VDevItem(dict):
+class VDevItem(ParsedDict):
     id = _config_getter('ZPOOL_CONFIG_ID')
     guid = _config_getter('ZPOOL_CONFIG_GUID')
     type = _config_getter('ZPOOL_CONFIG_TYPE')
@@ -116,7 +129,7 @@ class VDevItem(dict):
     vdev_stats = _config_getter('ZPOOL_CONFIG_VDEV_STATS', [], VDevStats.from_data)
 
     def __repr__(self):
-        base = dict.__repr__(self)
+        base = ParsedDict.__repr__(self)
         return "<%s: %s (%s): %s>" % (self.__class__.__name__, self.type, self.guid, base)
 
 
@@ -130,7 +143,7 @@ class VDevTree(VDevItem):
     pass
 
 
-class ZPoolConfig(dict):
+class ZPoolConfig(ParsedDict):
     name = _config_getter('ZPOOL_CONFIG_POOL_NAME')
     guid = _config_getter('ZPOOL_CONFIG_POOL_GUID')
     hostid = _config_getter('ZPOOL_CONFIG_HOSTID')
@@ -146,7 +159,7 @@ class ZPoolConfig(dict):
     current_txg = _config_getter('ZPOOL_CONFIG_POOL_TXG', -1)
 
     def __repr__(self):
-        base = dict.__repr__(self)
+        base = ParsedDict.__repr__(self)
         return "<ZPoolConfig: %s: %s>" % (self.name, base)
 
 
