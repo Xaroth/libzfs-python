@@ -9,6 +9,10 @@ libzfs = bindings.libzfs
 ffi = bindings.ffi
 
 pool_state_t = bindings['pool_state_t']
+
+vdev_state_t = bindings['vdev_state_t']
+vdev_aux_t = bindings['vdev_aux_t']
+
 zpool_errata_t = bindings['zpool_errata_t']
 zpool_prop_t = bindings['zpool_prop_t']
 zprop_type_t = bindings['zprop_type_t']
@@ -63,6 +67,9 @@ class ZPoolPropSources(dict):
 class VDevStats(dict):
     ops = _key_getter('ops', [], dict)
     bytes = _key_getter('bytes', [], dict)
+
+    state = _key_getter('state', 0, vdev_state_t)
+    aux = _key_getter('aux', 0, vdev_aux_t)
 
     @classmethod
     def from_data(cls, data):
