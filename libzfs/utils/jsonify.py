@@ -31,7 +31,12 @@ def jsonify(o, max_depth=-1, parse_enums=PARSE_KEEP):
         return o
     max_depth -= 1
     if isinstance(o, dict):
-        return {key: jsonify(getattr(o, key, value), max_depth=max_depth, parse_enums=parse_enums)
+        def _getter(key, value):
+            other = getattr(o, key, value)
+            if callable(other):
+                other = value
+            return value
+        return {key: jsonify(_getter(key, value), max_depth=max_depth, parse_enums=parse_enums)
                 for key, value in six.iteritems(o)}
     elif isinstance(o, list):
         return [jsonify(x, max_depth=max_depth, parse_enums=parse_enums) for x in o]
