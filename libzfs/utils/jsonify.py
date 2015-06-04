@@ -35,7 +35,7 @@ def jsonify(o, max_depth=-1, parse_enums=PARSE_KEEP):
             other = getattr(o, key, value)
             if callable(other):
                 other = value
-            return value
+            return other
         return {key: jsonify(_getter(key, value), max_depth=max_depth, parse_enums=parse_enums)
                 for key, value in six.iteritems(o)}
     elif isinstance(o, list):
