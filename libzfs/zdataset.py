@@ -36,6 +36,10 @@ def _get_iterfunc(funcname, extra=False):
     return property(_inner)
 
 
+class ZDatasetProperties(dict):
+    pass
+
+
 class ZDataset(object):
     _properties = None
     _propertysources = None
@@ -81,9 +85,8 @@ class ZDataset(object):
     @LibZFSHandle.requires_refcount
     @LibZFSHandle.auto
     def refresh_properties(self):
-        self._properties = {}
+        self._properties = ZDatasetProperties()
         self._propertysources = {}
-        self._propertynames = {}
 
         for prop in zfs_prop_t:
             if prop >= zfs_prop_t.ZFS_NUM_PROPS:
@@ -108,9 +111,9 @@ class ZDataset(object):
                 if res == 0:
                     value = ffi.string(holder)
 
-            name = ffi.string(libzfs.zfs_prop_to_name(int(prop)))
+            if prop not in ZDatasetProperties._altnames:
+                ZDatasetProperties._altnames[prop] = bindings.ffi.string(bindings.libzfs.zfs_prop_to_name(int(prop)))
             self._propertysources[prop] = zprop_source_t(sourceholder[0])
-            self._propertynames[prop] = name
             self._properties[prop] = value
 
     @property

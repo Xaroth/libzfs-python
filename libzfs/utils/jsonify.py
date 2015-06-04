@@ -31,13 +31,18 @@ def jsonify(o, max_depth=-1, parse_enums=PARSE_KEEP):
         return o
     max_depth -= 1
     if isinstance(o, dict):
+        keyattrs = getattr(o.__class__, '_altnames', {})
+
         def _getter(key, value):
+            key = keyattrs.get(key, key)
             other = getattr(o, key, value)
             if callable(other):
                 other = value
-            return other
-        return {key: jsonify(_getter(key, value), max_depth=max_depth, parse_enums=parse_enums)
-                for key, value in six.iteritems(o)}
+            if isinstance(key, Enum):  # Make sure we use a name as the key... if we don't it might mess some things up.
+                key = key.name
+            return key, jsonify(other, max_depth=max_depth, parse_enums=parse_enums)
+
+        return dict(_getter(key, value) for key, value in six.iteritems(o))
     elif isinstance(o, list):
         return [jsonify(x, max_depth=max_depth, parse_enums=parse_enums) for x in o]
     elif isinstance(o, tuple):

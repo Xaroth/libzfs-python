@@ -43,6 +43,7 @@ class PoolScanStats(dict):
 
 
 class ZPoolProperties(dict):
+    _altnames = {}
     name = _config_getter('ZPOOL_PROP_NAME')
     size = _config_getter('ZPOOL_PROP_SIZE', -1)
     capacity = _config_getter('ZPOOL_PROP_CAPACITY', -1)
@@ -252,6 +253,8 @@ class ZPool(object):
                     value = None
                 else:
                     value = bindings.ffi.string(holder)
+            if prop not in ZPoolProperties._altnames:
+                ZPoolProperties._altnames[prop] = bindings.ffi.string(bindings.libzfs.zpool_prop_to_name(int(prop)))
             self._properties[prop] = value
             self._propertysources[prop] = zprop_source_t(sourceholder[0])
 
