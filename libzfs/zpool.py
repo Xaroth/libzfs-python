@@ -58,6 +58,8 @@ class ZPoolProperties(dict):
 
 
 class ZPoolPropSources(dict):
+    _altnames = {}
+
     def __repr__(self):
         base = dict.__repr__(self)
         return "<%s: %s>" % (self.__class__.__name__, base)
@@ -254,7 +256,9 @@ class ZPool(object):
                 else:
                     value = bindings.ffi.string(holder)
             if prop not in ZPoolProperties._altnames:
-                ZPoolProperties._altnames[prop] = bindings.ffi.string(bindings.libzfs.zpool_prop_to_name(int(prop)))
+                name = bindings.ffi.string(bindings.libzfs.zpool_prop_to_name(int(prop)))
+                ZPoolProperties._altnames[prop] = name
+                ZPoolPropSources._altnames[prop] = name
             self._properties[prop] = value
             self._propertysources[prop] = zprop_source_t(sourceholder[0])
 

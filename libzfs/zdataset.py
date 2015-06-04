@@ -46,6 +46,8 @@ class ZDatasetProperties(dict):
 
 
 class ZDatasetPropSources(dict):
+    _altnames = {}
+
     def __repr__(self):
         base = dict.__repr__(self)
         return "<%s: %s>" % (self.__class__.__name__, base)
@@ -123,7 +125,9 @@ class ZDataset(object):
                     value = ffi.string(holder)
 
             if prop not in ZDatasetProperties._altnames:
-                ZDatasetProperties._altnames[prop] = bindings.ffi.string(bindings.libzfs.zfs_prop_to_name(int(prop)))
+                name = bindings.ffi.string(bindings.libzfs.zfs_prop_to_name(int(prop)))
+                ZDatasetProperties._altnames[prop] = name
+                ZDatasetPropSources._altnames[prop] = name
             self._propertysources[prop] = zprop_source_t(sourceholder[0])
             self._properties[prop] = value
 
