@@ -32,6 +32,7 @@ def _get_iterfunc(funcname, extra=False):
 
         func(self.hdl, *args)
         return datasets
+    _inner.__name__ = funcname
 
     return property(_inner)
 
