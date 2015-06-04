@@ -1,4 +1,3 @@
-from . import bindings
 import functools
 import atexit
 
@@ -25,6 +24,7 @@ class LibZFSHandle(object):
 
     @classmethod
     def _add_ref(cls):
+        from . import bindings
         cls._count += 1
         if cls._global_ptr is None:
             cls._global_ptr = bindings.libzfs.libzfs_init()
@@ -32,6 +32,7 @@ class LibZFSHandle(object):
 
     @classmethod
     def _del_ref(cls):
+        from . import bindings
         cls._count -= 1
         if cls._count < 1 and cls._global_ptr is not None:
             cls._count = 0
