@@ -12,10 +12,43 @@ zprop_source_t = bindings['zprop_source_t']
 ZFS_MAXNAMELEN = bindings['ZFS_MAXNAMELEN']
 
 
+def _get_iterfunc(funcname, extra=False):
+    func = getattr(bindings.libzfs, funcname)
+
+    @LibZFSHandle.requires_refcount
+    @LibZFSHandle.auto
+    def _inner(self):
+        datasets = []
+
+        @ffi.callback('zfs_iter_f')
+        def _cb(hdl, arg=None):
+            ds = ZDataset(hdl)
+            datasets.append(ds)
+            return 0
+
+        args = [_cb, bindings.ffi.NULL]
+        if extra:
+            args.insert(0, boolean_t(False))
+
+        func(self.hdl, *args)
+        return datasets
+
+    return property(_inner)
+
+
 class ZDataset(object):
     _properties = None
     _propertysources = None
     _propertynames = None
+
+    children = _get_iterfunc('zfs_iter_children')
+    child_filesystems = _get_iterfunc('zfs_iter_filesystems')
+    child_snapshots = _get_iterfunc('zfs_iter_snapshots', True)
+
+    def reset_children(self):
+        self._zfs_iter_children = None
+        self._zfs_iter_filesystems = None
+        self._zfs_iter_snapshots = None
 
     def __init__(self, hdl):
         self._hdl = hdl
@@ -144,28 +177,3 @@ class ZDataset(object):
         if zhp == ffi.NULL:
             raise KeyError("Unknown dataset: %s" % name)
         return ZDataset(zhp)
-
-    @LibZFSHandle.requires_refcount
-    @LibZFSHandle.auto
-    def _iter(self, func, extra=None):
-        datasets = []
-
-        @ffi.callback('zfs_iter_f')
-        def _callback(handle, arg=None):
-            zpool = ZDataset(handle)
-            datasets.append(zpool)
-            return 0
-        args = [_callback, ffi.NULL]
-        if extra is not None:
-            args.insert(0, extra)
-        func(self.hdl, *args)
-        return datasets
-
-    def children(self):
-        return self._iter(libzfs.zfs_iter_children)
-
-    def child_filesystems(self):
-        return self._iter(libzfs.zfs_iter_filesystems)
-
-    def child_snapshots(self):
-        return self._iter(libzfs.zfs_iter_snapshots, boolean_t(False))
