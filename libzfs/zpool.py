@@ -1,7 +1,7 @@
 from . import bindings
 from .nvpair import ptr_to_dict
 from .handle import LibZFSHandle
-from .utils.conversion import boolean_t
+from .utils.conversion import boolean_t, _key_getter, _config_getter
 
 from datetime import datetime
 
@@ -19,28 +19,6 @@ zpool_status_t = bindings['zpool_status_t']
 zprop_source_t = bindings['zprop_source_t']
 zio_type_t = bindings['zio_type_t']
 ZPOOL_MAXNAMELEN = bindings['ZPOOL_MAXNAMELEN']
-
-
-def _config_getter(name, default=None, transform=None):
-    key = bindings[name]
-    return _key_getter(key, default=default, transform=transform, name=name)
-
-
-def _key_getter(key, default=None, transform=None, name=None):
-    name = name or key
-
-    def _getter(self):
-        if transform:
-            value = getattr(self, '_%s' % name, None)
-            if value is not None:
-                return value
-        value = self.get(key, default)
-        if transform:
-            value = transform(value)
-            setattr(self, '_%s' % name, value)
-        return value
-    _getter.__name__ = name
-    return property(_getter)
 
 
 class PoolScanStats(dict):
