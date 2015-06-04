@@ -150,7 +150,7 @@ class VDevChild(VDevItem):
     asize = _config_getter('ZPOOL_CONFIG_ASIZE', -1)
     is_log = _config_getter('ZPOOL_CONFIG_IS_LOG', 0, bool)
     path = _config_getter('ZPOOL_CONFIG_PATH', None)
-    parity = _config_getter('ZPOOL_CONFIG_NPARITY', -1)
+    parity = _config_getter('ZPOOL_CONFIG_NPARITY', None)
 
 
 class VDevTree(VDevItem):
