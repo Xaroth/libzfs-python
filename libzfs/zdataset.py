@@ -37,6 +37,7 @@ def _get_iterfunc(funcname, extra=False):
 
 
 class ZDatasetProperties(dict):
+    _altnames = {}
     pass
 
 
