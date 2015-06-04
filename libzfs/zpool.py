@@ -4,7 +4,6 @@ from .handle import LibZFSHandle
 from .utils.conversion import boolean_t
 
 from datetime import datetime
-from enum import Enum
 
 libzfs = bindings.libzfs
 ffi = bindings.ffi
@@ -43,40 +42,6 @@ def _key_getter(key, default=None, transform=None, name=None):
         return value
     _getter.__name__ = name
     return property(_getter)
-
-
-PARSE_KEEP = 0
-PARSE_NAME = 1
-PARSE_NAME_LONG = 2
-PARSE_VALUE = 3
-PARSE_BOTH = 4
-
-
-def jsonify(o, max_depth=-1, parse_enums=PARSE_KEEP):
-    """
-    Walks through object o, and attempts to get the property instead of the key, if available.
-    This means that for our VDev objects we can easily get a dict of all the 'parsed' values.
-    """
-    if max_depth == 0:
-        return o
-    max_depth -= 1
-    if isinstance(o, dict):
-        return {key: jsonify(getattr(o, key, value), max_depth=max_depth, parse_enums=parse_enums)
-                for key, value in o.items()}
-    elif isinstance(o, list):
-        return [jsonify(x, max_depth=max_depth, parse_enums=parse_enums) for x in o]
-    elif isinstance(o, tuple):
-        return (jsonify(x, max_depth=max_depth, parse_enums=parse_enums) for x in o)
-    elif isinstance(o, Enum):
-        if parse_enums == PARSE_NAME:
-            return o.name
-        elif parse_enums == PARSE_NAME_LONG:
-            return str(o)
-        elif parse_enums == PARSE_VALUE:
-            return o.value
-        elif parse_enums == PARSE_BOTH:
-            return {'name': o.name, 'value': o.value}
-    return o
 
 
 class ZPoolProperties(dict):
