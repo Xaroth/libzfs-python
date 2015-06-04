@@ -39,7 +39,16 @@ def _get_iterfunc(funcname, extra=False):
 
 class ZDatasetProperties(dict):
     _altnames = {}
-    pass
+
+    def __repr__(self):
+        base = dict.__repr__(self)
+        return "<%s: %s: %s>" % (self.__class__.__name__, self.name, base)
+
+
+class ZDatasetPropSources(dict):
+    def __repr__(self):
+        base = dict.__repr__(self)
+        return "<%s: %s>" % (self.__class__.__name__, base)
 
 
 class ZDataset(object):
@@ -88,7 +97,7 @@ class ZDataset(object):
     @LibZFSHandle.auto
     def refresh_properties(self):
         self._properties = ZDatasetProperties()
-        self._propertysources = {}
+        self._propertysources = ZDatasetPropSources()
 
         for prop in zfs_prop_t:
             if prop >= zfs_prop_t.ZFS_NUM_PROPS:
