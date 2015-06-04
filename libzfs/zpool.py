@@ -44,20 +44,24 @@ def _key_getter(key, default=None, transform=None, name=None):
     return property(_getter)
 
 
-class ParsedDict(dict):
-    @classmethod
-    def parse_to_dict(cls, obj):
-        if isinstance(obj, ParsedDict):
-            return {key: cls.parse_to_dict(getattr(obj, key, obj[key])) for key in obj}
-        if isinstance(obj, list):
-            return [cls.parse_to_dict(x) for x in obj]
-        return obj
+def jsonify(o, max_depth=-1):
+    """
+    Walks through object o, and attempts to get the property instead of the key, if available.
+    This means that for our VDev objects we can easily get a dict of all the 'parsed' values.
+    """
+    if max_depth == 0:
+        return o
+    max_depth -= 1
+    if isinstance(o, dict):
+        return {key: jsonify(getattr(o, key, value), max_depth) for key, value in o.items()}
+    elif isinstance(o, list):
+        return [jsonify(x, max_depth) for x in o]
+    elif isinstance(o, tuple):
+        return (jsonify(x, max_depth) for x in o)
+    return o
 
-    def to_parsed_dict(self):
-        return ParsedDict.parse_to_dict(self)
 
-
-class ZPoolProperties(ParsedDict):
+class ZPoolProperties(dict):
     name = _config_getter('ZPOOL_PROP_NAME')
     size = _config_getter('ZPOOL_PROP_SIZE', -1)
     capacity = _config_getter('ZPOOL_PROP_CAPACITY', -1)
@@ -67,17 +71,17 @@ class ZPoolProperties(ParsedDict):
     fragmentation = _config_getter('ZPOOL_PROP_FRAGMENTATION', 0)
 
     def __repr__(self):
-        base = ParsedDict.__repr__(self)
+        base = dict.__repr__(self)
         return "<%s: %s: %s>" % (self.__class__.__name__, self.name, base)
 
 
-class ZPoolPropSources(ParsedDict):
+class ZPoolPropSources(dict):
     def __repr__(self):
-        base = ParsedDict.__repr__(self)
+        base = dict.__repr__(self)
         return "<%s: %s>" % (self.__class__.__name__, base)
 
 
-class VDevStats(ParsedDict):
+class VDevStats(dict):
     ops = _key_getter('ops', [], dict)
     bytes = _key_getter('bytes', [], dict)
 
@@ -119,8 +123,12 @@ class VDevStats(ParsedDict):
         items.append(('fragmentation', (fragmentation - other['fragmentation']) if fragmentation is not None else None))
         return self.__class__(items)
 
+    def __repr__(self):
+        base = dict.__repr__(self)
+        return "<%s: %s>" % (self.__class__.__name__, base)
 
-class VDevItem(ParsedDict):
+
+class VDevItem(dict):
     id = _config_getter('ZPOOL_CONFIG_ID')
     guid = _config_getter('ZPOOL_CONFIG_GUID')
     type = _config_getter('ZPOOL_CONFIG_TYPE')
@@ -129,7 +137,7 @@ class VDevItem(ParsedDict):
     vdev_stats = _config_getter('ZPOOL_CONFIG_VDEV_STATS', [], VDevStats.from_data)
 
     def __repr__(self):
-        base = ParsedDict.__repr__(self)
+        base = dict.__repr__(self)
         return "<%s: %s (%s): %s>" % (self.__class__.__name__, self.type, self.guid, base)
 
 
@@ -143,7 +151,7 @@ class VDevTree(VDevItem):
     pass
 
 
-class ZPoolConfig(ParsedDict):
+class ZPoolConfig(dict):
     name = _config_getter('ZPOOL_CONFIG_POOL_NAME')
     guid = _config_getter('ZPOOL_CONFIG_POOL_GUID')
     hostid = _config_getter('ZPOOL_CONFIG_HOSTID')
@@ -159,7 +167,7 @@ class ZPoolConfig(ParsedDict):
     current_txg = _config_getter('ZPOOL_CONFIG_POOL_TXG', -1)
 
     def __repr__(self):
-        base = ParsedDict.__repr__(self)
+        base = dict.__repr__(self)
         return "<ZPoolConfig: %s: %s>" % (self.name, base)
 
 
