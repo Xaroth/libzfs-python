@@ -9,6 +9,8 @@ libzfs = bindings.libzfs
 ffi = bindings.ffi
 
 pool_state_t = bindings['pool_state_t']
+pool_scan_func_t = bindings['pool_scan_func_t']
+dsl_scan_state_t = bindings['dsl_scan_state_t']
 
 vdev_state_t = bindings['vdev_state_t']
 vdev_aux_t = bindings['vdev_aux_t']
@@ -42,6 +44,27 @@ def _key_getter(key, default=None, transform=None, name=None):
         return value
     _getter.__name__ = name
     return property(_getter)
+
+
+class PoolScanStats(dict):
+    pass_start = _key_getter('pass_start', 0, datetime.fromtimestamp)
+    start_time = _key_getter('start_time', 0, datetime.fromtimestamp)
+    func = _key_getter('func', 0, pool_scan_func_t)
+    state = _key_getter('state', 0, dsl_scan_state_t)
+
+    @classmethod
+    def from_data(cls, data):
+        keys = ['func', 'state', 'start_time', 'end_time',
+                'to_examine', 'examined',
+                'to_process', 'processed', 'errors',
+                'pass_examined', 'pass_start']
+        if len(data) < len(keys):
+            data = data + ([None] * (len(keys) - len(data)))
+        return cls(zip(keys, data))
+
+    def __repr__(self):
+        base = dict.__repr__(self)
+        return "<%s: %s>" % (self.__class__.__name__, base)
 
 
 class ZPoolProperties(dict):
@@ -118,6 +141,7 @@ class VDevItem(dict):
     create_txg = _config_getter('ZPOOL_CONFIG_CREATE_TXG', -1)
     children = _config_getter('ZPOOL_CONFIG_CHILDREN', [], lambda children: [VDevChild(child) for child in children])
     vdev_stats = _config_getter('ZPOOL_CONFIG_VDEV_STATS', [], VDevStats.from_data)
+    scan_stats = _config_getter('ZPOOL_CONFIG_SCAN_STATS', [], PoolScanStats.from_data)
 
     def __repr__(self):
         base = dict.__repr__(self)
