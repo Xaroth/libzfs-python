@@ -45,6 +45,13 @@ def _to_int(x):
         return int(x, 16)
 
 
+def _to_int_float(x):
+    try:
+        return _to_int(x)
+    except ValueError:
+        return float(x)
+
+
 def shift_replace(m):
     left, shift, right = m.group(1).lstrip('('), m.group(2), m.group(3).rstrip(')')
     left = left.strip()
@@ -297,12 +304,9 @@ class BindingManager(object):
             if IS_INTEGER_VALUE.match(value):
                 val = value.rstrip('UL')
                 try:
-                    value = _to_int(val)
-                except ValueError:
-                    try:
-                        value = float(val)
-                    except:
-                        continue
+                    value = _to_int_float(val)
+                except:
+                    continue
                 yield key, value
             elif len(value) > 1 and value[0] == value[-1] and value[0] in ("'", '"'):
                 yield key, value[1:-1]
