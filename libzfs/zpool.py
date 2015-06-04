@@ -5,9 +5,6 @@ from .utils.conversion import boolean_t
 
 from datetime import datetime
 
-libzfs = bindings.libzfs
-ffi = bindings.ffi
-
 pool_state_t = bindings['pool_state_t']
 pool_scan_func_t = bindings['pool_scan_func_t']
 dsl_scan_state_t = bindings['dsl_scan_state_t']
@@ -152,6 +149,8 @@ class VDevChild(VDevItem):
     ashift = _config_getter('ZPOOL_CONFIG_ASHIFT', -1)
     asize = _config_getter('ZPOOL_CONFIG_ASIZE', -1)
     is_log = _config_getter('ZPOOL_CONFIG_IS_LOG', 0, bool)
+    path = _config_getter('ZPOOL_CONFIG_PATH', None)
+    parity = _config_getter('ZPOOL_CONFIG_NPARITY', -1)
 
 
 class VDevTree(VDevItem):
@@ -197,7 +196,7 @@ class ZPool(object):
 
     def __del__(self):
         if hasattr(self, '_hdl'):
-            libzfs.zpool_close(self._hdl)
+            bindings.libzfs.zpool_close(self._hdl)
 
     @property
     def hdl(self):
@@ -206,29 +205,29 @@ class ZPool(object):
     @property
     def name(self):
         if self._name is None:
-            self._name = ffi.string(libzfs.zpool_get_name(self.hdl))
+            self._name = bindings.ffi.string(bindings.libzfs.zpool_get_name(self.hdl))
         return self._name
 
     @property
     def state(self):
         if self._state is None:
-            state = libzfs.zpool_get_state(self.hdl)
+            state = bindings.libzfs.zpool_get_state(self.hdl)
             self._state = pool_state_t(state)
         return self._state
 
     def _get_status(self):
         if self._status is not None:
             return
-        msgid = ffi.new('char **')
-        errata = ffi.new('zpool_errata_t *')
+        msgid = bindings.ffi.new('char **')
+        errata = bindings.ffi.new('zpool_errata_t *')
 
-        reason = libzfs.zpool_get_status(self.hdl, msgid, errata)
+        reason = bindings.libzfs.zpool_get_status(self.hdl, msgid, errata)
 
         self._status = zpool_status_t(reason)
-        if msgid[0] == ffi.NULL:
+        if msgid[0] == bindings.ffi.NULL:
             self._status_extra = ''
         else:
-            self._status_extra = ffi.string(msgid[0])
+            self._status_extra = bindings.ffi.string(msgid[0])
         self._errata = zpool_errata_t(errata[0])
 
     @property
@@ -250,31 +249,31 @@ class ZPool(object):
     @LibZFSHandle.auto
     def refresh_properties(self):
         if self._properties is not None:
-            if libzfs.zpool_props_refresh(self.hdl) != 0:
+            if bindings.libzfs.zpool_props_refresh(self.hdl) != 0:
                 raise Exception("Unable to refresh our zpool properties")
         self._properties = ZPoolProperties()
         self._propertysources = ZPoolPropSources()
         for prop in zpool_prop_t:
             if prop >= zpool_prop_t.ZPOOL_NUM_PROPS:
                 continue
-            sourceholder = ffi.new('zprop_source_t *')
-            ptype = zprop_type_t(libzfs.zpool_prop_get_type(int(prop)))
+            sourceholder = bindings.ffi.new('zprop_source_t *')
+            ptype = zprop_type_t(bindings.libzfs.zpool_prop_get_type(int(prop)))
             if ptype == zprop_type_t.PROP_TYPE_NUMBER:
-                value = libzfs.zpool_get_prop_int(self.hdl, int(prop), sourceholder)
+                value = bindings.libzfs.zpool_get_prop_int(self.hdl, int(prop), sourceholder)
             elif ptype == zprop_type_t.PROP_TYPE_INDEX:
-                value = libzfs.zpool_get_prop_int(self.hdl, int(prop), sourceholder)
-                valuestr = ffi.new('char **')
-                if libzfs.zpool_prop_index_to_string(int(prop), value, valuestr) != 0:
+                value = bindings.libzfs.zpool_get_prop_int(self.hdl, int(prop), sourceholder)
+                valuestr = bindings.ffi.new('char **')
+                if bindings.libzfs.zpool_prop_index_to_string(int(prop), value, valuestr) != 0:
                     value = None
                 else:
-                    value = ffi.string(valuestr[0])
+                    value = bindings.ffi.string(valuestr[0])
             else:
-                holder = ffi.new('char [%s]' % ZPOOL_MAXNAMELEN)
-                if libzfs.zpool_get_prop_literal(self.hdl, int(prop), holder, ZPOOL_MAXNAMELEN,
+                holder = bindings.ffi.new('char [%s]' % ZPOOL_MAXNAMELEN)
+                if bindings.libzfs.zpool_get_prop_literal(self.hdl, int(prop), holder, ZPOOL_MAXNAMELEN,
                                                  sourceholder, boolean_t(True)) != 0:
                     value = None
                 else:
-                    value = ffi.string(holder)
+                    value = bindings.ffi.string(holder)
             self._properties[prop] = value
             self._propertysources[prop] = zprop_source_t(sourceholder[0])
 
@@ -293,7 +292,7 @@ class ZPool(object):
     @property
     def config(self):
         if self._config is None:
-            config = libzfs.zpool_get_config(self.hdl, ffi.NULL)
+            config = bindings.libzfs.zpool_get_config(self.hdl, bindings.ffi.NULL)
             self._config = ZPoolConfig(ptr_to_dict(config, free=False))
         return self._config
 
@@ -305,14 +304,14 @@ class ZPool(object):
                 #  the first time we refresh the iostats.
                 # The internals (zfs/lib/libzfs/libzfs_config.c) should probably clarify more
                 #  on why.. for now we'll mimic what we see.
-                old_config = libzfs.zpool_get_old_config(self.hdl)
+                old_config = bindings.libzfs.zpool_get_old_config(self.hdl)
                 self._old_config = ZPoolConfig(ptr_to_dict(old_config, free=False))
         return self._old_config
 
     @LibZFSHandle.requires_refcount
     def refresh_stats(self):
-        missing = ffi.new("boolean_t *")
-        success = libzfs.zpool_refresh_stats(self.hdl, missing) == 0
+        missing = bindings.ffi.new("boolean_t *")
+        success = bindings.libzfs.zpool_refresh_stats(self.hdl, missing) == 0
 
         missing = bool(missing[0])
 
@@ -332,14 +331,14 @@ class ZPool(object):
     def list(cls):
         pools = []
 
-        @ffi.callback('zpool_iter_f')
+        @bindings.ffi.callback('zpool_iter_f')
         def _callback(handle, arg=None):
             zpool = ZPool(handle)
             pools.append(zpool)
             return 0
 
         with LibZFSHandle() as hdl:
-            libzfs.zpool_iter(hdl, _callback, ffi.NULL)
+            bindings.libzfs.zpool_iter(hdl, _callback, bindings.ffi.NULL)
 
         return pools
 
