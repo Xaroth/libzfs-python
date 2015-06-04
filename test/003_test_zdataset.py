@@ -26,3 +26,9 @@ class Test_ZDataset(_LibZFSHandleCase):
         assert len(props.keys()) > 0
         assert props.get(zfs_prop_t.ZFS_PROP_NAME) == LIBZFS_TEST_POOL
         assert props.get(zfs_prop_t.ZFS_PROP_TYPE) == dstype_name
+
+    def test_004_get_zdataset_children(self):
+        dataset = ZDataset.get(name=LIBZFS_TEST_POOL)
+        assert dataset.children is not None
+        assert dataset.child_filesystems is not None
+        assert dataset.child_snapshots is not None
