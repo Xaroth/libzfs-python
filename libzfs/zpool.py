@@ -67,7 +67,7 @@ def jsonify(o, max_depth=-1, parse_enums=PARSE_KEEP):
         return [jsonify(x, max_depth=max_depth, parse_enums=parse_enums) for x in o]
     elif isinstance(o, tuple):
         return (jsonify(x, max_depth=max_depth, parse_enums=parse_enums) for x in o)
-    elif issubclass(o, Enum):
+    elif isinstance(o, Enum):
         if parse_enums == PARSE_NAME:
             return o.name
         elif parse_enums == PARSE_NAME_LONG:
