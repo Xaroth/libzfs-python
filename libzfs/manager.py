@@ -227,7 +227,7 @@ class BindingManager(object):
             line = AR_DIM.sub(shift_replace, line, 1)
         return line
 
-    def process_headers(self, output):
+    def process_headers(self, output):  # NOQA
         output_dir = os.environ.get('LIBZFS_OUTPUT', self.DEFAULT_OUTPUT)
         headers_raw_path = join(output_dir, 'headers.h.in')
         with open(headers_raw_path, 'w') as fh:
@@ -281,7 +281,7 @@ class BindingManager(object):
         stdout, _ = process.communicate(build_source)
         return '\n'.join(self.process_headers(stdout))
 
-    def build_defines(self):
+    def build_defines(self):  # NOQA
         items = copy.copy(self._defines)
 
         def _get(x):
