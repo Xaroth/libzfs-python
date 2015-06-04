@@ -43,7 +43,7 @@ def jsonify(o, max_depth=-1, parse_enums=PARSE_KEEP):
     elif isinstance(o, tuple):
         return (jsonify(x, max_depth=max_depth, parse_enums=parse_enums) for x in o)
     elif isinstance(o, Enum):
-        o = _parse_enum(o)
+        o = _parse_enum(o, parse_enums=parse_enums)
     return o
 
 
