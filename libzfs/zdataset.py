@@ -42,7 +42,7 @@ class ZDatasetProperties(dict):
 
     def __repr__(self):
         base = dict.__repr__(self)
-        return "<%s: %s: %s>" % (self.__class__.__name__, self.name, base)
+        return "<%s: %s: %s>" % (self.__class__.__name__, base)
 
 
 class ZDatasetPropSources(dict):
