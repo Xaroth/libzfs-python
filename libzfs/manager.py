@@ -235,16 +235,18 @@ class BindingManager(object):
         function_blacklist = self._merge_with_environ(self.DEFAULT_FUNCTION_BLACKLIST,
                                                       'LIBZFS_FUNCTION_BLACKLIST',
                                                       'blacklist')
+
+        # Remove blank lines and those that contain only #-style or //-style comments.
+        output = '\n'.join(s for s in output.splitlines()
+                           if not re.match(r'^\s*(#|//|$)', s))
+        
         # First we reduce enums to a single line, and replace all tabs with spaces
         output = output.replace(',\n', ', ').replace('\n}', '}').replace('\t', ' ')
         # Now we remove double newlines and double spaces
         output = re.sub('\s\s+', ' ', re.sub('\n\n+', '\n', output))
+        
         previous = None
         for line in output.splitlines():
-            if not line:
-                continue
-            if line.startswith('# ') or line.startswith('//'):  # Comments
-                continue
             if previous:
                 line = previous + ' ' + line
                 previous = None
