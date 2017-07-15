@@ -1,5 +1,5 @@
 from . import bindings
-from .nvpair import ptr_to_dict
+from .nvpair import ptr_to_dict, NVList
 from .handle import LibZFSHandle
 from .utils.conversion import boolean_t, _key_getter, _config_getter
 
@@ -343,3 +343,13 @@ class ZPool(object):
         if len(pools) == 1:
             return pools[0]
         raise KeyError("Could not find %s matching query" % cls.__name__)
+
+    @classmethod
+    @LibZFSHandle.requires_refcount
+    def find(cls, paths=[]):
+        with LibZFSHandle() as hdl:
+            argv = [bindings.ffi.new("char []", arg) for arg in paths]
+            zpools = bindings.libzfs.zpool_find_import(hdl, len(paths), argv)
+            nvlist = NVList.from_nvlist_ptr(zpools)
+            return nvlist
+        return None
