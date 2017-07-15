@@ -353,3 +353,21 @@ class ZPool(object):
             nvlist = NVList.from_nvlist_ptr(zpools)
             return nvlist
         return None
+
+    @classmethod
+    @LibZFSHandle.requires_refcount
+    def tryimport(cls, pool, paths=[]):
+        success = False
+        with LibZFSHandle() as hdl:
+            nvlist = cls.find(paths)
+            if not nvlist:
+                raise Exception("No pools available")
+            config = None
+            for (k,v) in nvlist.items(deep=0):
+                if k == pool:
+                    config = v
+                    break
+            if not config:
+                raise Exception("No such pool available")
+            success = bindings.libzfs.zpool_import(hdl, config.ptr, bindings.ffi.NULL, bindings.ffi.NULL) == 0
+        return success
