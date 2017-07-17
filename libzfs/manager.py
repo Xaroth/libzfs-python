@@ -235,16 +235,22 @@ class BindingManager(object):
         function_blacklist = self._merge_with_environ(self.DEFAULT_FUNCTION_BLACKLIST,
                                                       'LIBZFS_FUNCTION_BLACKLIST',
                                                       'blacklist')
+        
+        # Remove blank lines and those that contain only #-style or //-style comments.  This is made slightly more
+        # complicated because we cannot remove certain preprocessor directives that process_define_line() is interested in.
+        output = '\n'.join(s for s in output.splitlines()
+                           if not re.match(r'^\s*((#(?!(define|undef)))|//|$)', s))
+
         # First we reduce enums to a single line, and replace all tabs with spaces
         output = output.replace(',\n', ', ').replace('\n}', '}').replace('\t', ' ')
         # Now we remove double newlines and double spaces
-        output = re.sub('\s\s+', ' ', re.sub('\n\n+', '\n', output))
+        output = re.sub(r'\n{2,}', '\n', output)
+        # This "double-negative" character class matches any non-newline whitespace.
+        output = re.sub(r'[^\S\r\n]{2,}', '\n', output)
+
         previous = None
+        in_function_body = False
         for line in output.splitlines():
-            if not line:
-                continue
-            if line.startswith('# ') or line.startswith('//'):  # Comments
-                continue
             if previous:
                 line = previous + ' ' + line
                 previous = None
@@ -258,10 +264,16 @@ class BindingManager(object):
                 continue
             # Check if we're dealing with a function
             func_match = FUNCTION_REGEX.match(line)
+            if func_match and '{' in line:
+                in_function_body = True
+            if in_function_body:
+                if '}' in line:  # this line closes the function body
+                    in_function_body = False
+                continue  # skip lines that are in a function body, including the one that ends it
             if func_match and func_match.group(2).lstrip('*') in function_blacklist:
-                continue
+                continue  # ignore blacklisted functions
             if func_match and 'inline' in func_match.group(1):
-                continue
+                continue  # ignore inline function definition
             # Check if we're dealing with an enum line
             if line.startswith(self.TYPEDEF_ENUM) or line.startswith(self.NORMAL_ENUM):
                 line = self.process_enum_line(line)
@@ -283,7 +295,6 @@ class BindingManager(object):
 
     def build_defines(self):  # NOQA
         items = copy.copy(self._defines)
-
         def _get(x):
             y = x
             if x[0] == '(' and x[-1] == ')':
@@ -298,7 +309,7 @@ class BindingManager(object):
                 if magic != x:
                     return magic
             return y
-        processed_defines = {key: _get(value) for key, value in six.iteritems(self._defines)}
+        processed_defines = {key: _get(value) for key, value in six.iteritems(self._defines) if value is not None}
 
         for key, value in six.iteritems(processed_defines):
             if IS_INTEGER_VALUE.match(value):

@@ -128,8 +128,8 @@ typedef int int_fast64_t;
 typedef int uint_fast64_t;
 
 /* C99 integer types capable of holding object pointers */
-// typedef int intptr_t;
-// typedef int uintptr_t;
+/* typedef int intptr_t; */
+/* typedef int uintptr_t; */
 
 /* C99 greatest-width integer types */
 typedef int intmax_t;
